@@ -14,7 +14,10 @@ bloqueia a linha da vaga e o índice parcial único impede duas reservas confirm
 Uma chave de solicitação permite recuperar o resultado sem criar outra reserva.
 Não há promessa de entrega exatamente uma vez entre PostgreSQL, Redis e WhatsApp.
 
-A IA apenas inicia o fluxo. A coleta e a confirmação são conduzidas pelo servidor,
+Pedidos diretos de agenda e respostas de escolha consultam o fluxo no servidor
+antes de chamar o modelo. A ferramenta cobre outras formulações reconhecidas pela
+IA. A primeira resposta já apresenta vagas reais de quinta, sem pedido de espera.
+A coleta e a confirmação são conduzidas pelo servidor,
 com validação por campo e conferência explícita do paciente. O cadastro temporário
 fica no Redis por 24h; o histórico de 12 falas não é suficiente para dez campos.
 Não se deduz endereço por CEP nem se usa nome de exibição como nome do paciente.

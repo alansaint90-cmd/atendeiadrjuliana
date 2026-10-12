@@ -11,6 +11,7 @@
 
 ## Agenda de consultas de Salvador
 
+- Com a integração habilitada, intenção de agendar ou consultar disponibilidade busca a agenda antes da resposta e apresenta somente as vagas livres de quinta-feira. Não pergunta por dia genérico, não solicita permissão para consultar e não pede para aguardar. Respostas como “11 e 20 pode ser?” selecionam o horário oferecido; dúvidas de preço e pedidos fora da agenda continuam no prompt.
 - A agenda de consultas é distinta das mensagens agendadas. Quintas-feiras têm seis inícios: 8h, 8h40, 9h20, 10h, 10h40 e 11h20, no fuso America/Sao_Paulo. A última consulta termina às 12h. Vagas são geradas para a data consultada, até 180 dias à frente; a IA busca as próximas oito quintas.
 - Antes da reserva são obrigatórios nome completo do paciente, telefone para contato, data de nascimento, CEP, rua, número (ou s/n), bairro, cidade e UF. Complemento é opcional. Dados pertencem ao paciente, mesmo quando um responsável inicia a conversa. O atendimento permanece a partir de 5 anos.
 - No WhatsApp, a ferramenta inicia a coleta administrativa; cada resposta preenche um campo validado. O cadastro sobrevive ao histórico curto por até 24h, isolado por conversa/instância. Perguntas, urgências e pedidos humanos retornam ao prompt. O paciente pode interromper com “cancelar cadastro” ou refazer com “corrigir” na conferência.

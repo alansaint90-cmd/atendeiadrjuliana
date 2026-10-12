@@ -231,6 +231,10 @@ Trava da vaga e índice único impedem duplicidade mesmo entre chips. Cadastro
 temporário no Redis é isolado por conversa/instância, expira em 24h e não usa
 somente o histórico curto. Entrega incerta da confirmação não repete o envio.
 O agente só inicia a coleta quando agendaConsultas estiver habilitado no chatbot.
+Com a agenda habilitada, pedidos de agendamento ou disponibilidade consultam as
+vagas antes de responder. Oferecer somente quintas livres, sem perguntar por dia
+genérico, pedir permissão para consultar ou pedir espera. Horário com pergunta
+(como “11 e 20 pode ser?”) escolhe a vaga; dúvidas sobre preço seguem no prompt.
 Gerente administra a agenda; não registrar dados do paciente nos logs de auditoria.
 Até três números na mesma Evolution usam EVOLUTION_INSTANCE_NAME e as opcionais
 EVOLUTION_SECOND_INSTANCE_NAME e EVOLUTION_THIRD_INSTANCE_NAME. Cada instância usa seu próprio chatbot e prompt para testes A/B. Ao abrir Chatbot IA, vínculos compartilhados são separados com cópia inicial do prompt e auditoria; edições posteriores não afetam os outros números.

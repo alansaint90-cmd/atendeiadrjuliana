@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ErroDeNegocio } from "../acao";
 import { pacienteSchema, formatarConsulta, type PacienteConsulta, type HorarioConsulta, type Consulta } from "./schema";
+import { horaInformada } from "./intencao";
 
 const campos = ["nomeCompleto", "telefone", "nascimento", "cep", "rua", "numero", "complemento", "bairro", "cidade", "uf"] as const;
 export const perguntasCadastro: Record<keyof PacienteConsulta, string> = {
@@ -18,7 +19,7 @@ export interface PortaCadastroConsulta {
   ativo(): Promise<boolean>;
 }
 function menu(opcoes: HorarioConsulta[]) {
-  return opcoes.length ? `Estes são os próximos horários livres (horário de Brasília):\n${opcoes.map((v, i) => `${i + 1}. ${formatarConsulta(v.inicio)}`).join("\n")}\nQual opção você prefere? Responda com o número ou informe outra data no formato dia/mês/ano. A vaga só é reservada após o cadastro completo.`
+  return opcoes.length ? `A Dra. Juliana atende na Clínica Bonvida somente às quintas-feiras, com inícios entre 8h e 11h20. Consultei a agenda e estes são os próximos horários livres (horário de Brasília):\n${opcoes.map((v, i) => `${i + 1}. ${formatarConsulta(v.inicio)}`).join("\n")}\nQual desses horários você prefere? Responda com o número da opção ou com o horário. A vaga só é reservada após o cadastro completo e a conferência dos dados.`
     : "Não encontrei vagas disponíveis. A equipe precisa verificar a agenda; nenhuma consulta foi marcada.";
 }
 function resumo(d: CadastroConsulta) {
@@ -55,18 +56,22 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
     d.etapa = "encerrado"; d.paciente = {}; return responder("Cadastro interrompido. Nenhuma consulta foi marcada por este cadastro.");
   }
   // Perguntas e pedidos fora do cadastro continuam no prompt, inclusive urgências e atendimento humano.
-  if (/[?]|(?:falta de ar|dor no peito|urgência|urgencia|socorro|sintoma|atendente|humano|recepção|recepcao)/iu.test(entrada)) return null;
+  if (/(?:falta de ar|dor no peito|urgência|urgencia|socorro|sintoma|atendente|humano|recepção|recepcao|camaçari|camacari|semerge|remarcar|reagendar|cancelar consulta)/iu.test(entrada)) return null;
   if (d.etapa === "horario") {
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(entrada)) {
       try { d.opcoes = (await porta.vagas(entrada.split("/").reverse().join("-"))).filter(v => v.disponivel).slice(0, 6); }
       catch (erro) { return responder(erro instanceof ErroDeNegocio ? erro.message : "Confira a data: informe uma quinta-feira futura no formato dia/mês/ano."); }
       return responder(menu(d.opcoes));
     }
-    const opcao = /^\d{1,2}$/.test(entrada) ? d.opcoes[Number(entrada) - 1] : undefined;
+    const hora = horaInformada(entrada);
+    if (!hora && entrada.includes("?") && !/hor[aá]rio|vaga|quinta|segunda|terça|quarta|sexta|sábado|domingo/iu.test(entrada)) return null;
+    const candidatas = hora ? d.opcoes.filter(v => new Date(v.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) === hora) : [];
+    const opcao = /^\d{1,2}$/.test(entrada) && d.opcoes[Number(entrada) - 1] || (candidatas.length === 1 ? candidatas[0] : undefined);
     if (!opcao) return responder(menu(d.opcoes));
     d.horario = opcao; d.etapa = Object.keys(d.paciente).length === campos.length ? "conferencia" : "dados";
     return responder(d.etapa === "conferencia" ? resumo(d) : `Para cadastrar a consulta, preciso dos dados do paciente. ${perguntasCadastro[campos.find(c => d!.paciente[c] === undefined)!]}\nSe precisar interromper, escreva cancelar cadastro.`);
   }
+  if (entrada.includes("?")) return null;
   if (d.etapa === "conferencia") {
     if (/^(corrigir|não|nao)$/iu.test(entrada)) { d.paciente = {}; d.etapa = "dados"; return responder(perguntasCadastro.nomeCompleto); }
     if (!/^(sim|confirmo|confirmar|está correto|esta correto|pode agendar)[.!]?$/iu.test(entrada)) return responder(resumo(d));

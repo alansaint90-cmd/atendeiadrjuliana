@@ -16,6 +16,21 @@ const paciente: PacienteConsulta = { nomeCompleto: "Paciente Exemplo", telefone:
 const dia = () => proximasQuintas(Date.now() + 7 * 86400000)[0];
 const contexto = () => ({ instancia: "teste", origem: "conversa-teste", identidade: randomUUID(), autor: systemUserId });
 
+test("oferece somente vagas de quinta e entende horário com pergunta sem sair da agenda", async () => {
+  for (const escolha of ["11 e 20 pode ser ?", "11h20", "às 11:20", "quero 11h20"]) {
+    let estado: CadastroConsulta | null = null;
+    const vagas = horariosDoDia(dia()).map(p => ({ id: randomUUID(), ...p, atualizadoEm: new Date().toISOString(), disponivel: true }));
+    const porta: PortaCadastroConsulta = { ativo: async () => true, ler: async () => estado, salvar: async d => { estado = d; },
+      vagas: async () => vagas, reservar: async () => { throw new Error("Não pode reservar sem cadastro"); } };
+    const menu = await conduzirCadastro(porta, "inicio", "Quero agendar", true);
+    assert.match(menu!, /quintas-feiras/);
+    assert.doesNotMatch(menu!, /informe outra data|dia específico|aguarde/i);
+    assert.equal(await conduzirCadastro(porta, "preco", "Quanto custa?"), null);
+    assert.match((await conduzirCadastro(porta, "escolha", escolha))!, /nome completo/);
+    const salvo = await porta.ler(); assert.equal(salvo?.horario?.id, vagas[5].id);
+  }
+});
+
 test("agenda gera seis horários de quinta, incluindo consulta que começa às 11h20", () => {
   const horarios = horariosDoDia(dia());
   assert.equal(horarios.length, 6);

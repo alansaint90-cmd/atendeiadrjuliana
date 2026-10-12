@@ -166,6 +166,7 @@ try {
     ["orquestrador no prompt do chatbot reprova", reprova("chatbots/prompt-servidor.ts", "orquestrador-legado")],
     ["instrução individual ausente reprova", reprova("chatbots/prompt-servidor.ts", "mentoria-individual")],
     ["resposta sem tratamento de nome reprova", reprova("agent/processor.ts", "nome-cliente")],
+    ["resposta sem consulta direta da agenda reprova", reprova("agent/processor.ts", "consulta-disponibilidade")],
     ["nome sem persistência separada reprova", reprova("agent/store.ts", "nome-cliente")],
     ["worker sem pausa manual reprova", reprova("agent/worker.ts", "pausa-manual")],
     ["worker sem seleção da instância reprova", reprova("agent/worker.ts", "isolamento-instancias")],

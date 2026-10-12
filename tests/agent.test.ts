@@ -60,6 +60,37 @@ function fixture() {
     contactName: () => contactName, nextMessage: () => { state = null; } };
 }
 
+test("pedido de agendamento consulta vagas antes de gerar promessas ou negar acesso", async () => {
+  for (const texto of ["Quero agendar uma consulta", "Tem horário disponível na quinta?", "Quais são os horários livres?"]) {
+    const f = fixture(); const chamadas: boolean[] = [];
+    f.port.cadastroConsulta = async (_texto, iniciar) => { chamadas.push(iniciar); return iniciar ? "Quinta-feira: 08:00 e 11:20. Qual desses horários?" : null; };
+    f.port.generate = async () => { throw new Error("Não deve gerar uma promessa antes de consultar"); };
+    assert.equal(await processMessage({ ...message, text: texto }, { ...config, agendaConsultas: true }, f.port), "enviada");
+    assert.deepEqual(chamadas, [false, true]); assert.match(f.sentTexts[0], /08:00 e 11:20/);
+  }
+});
+
+test("aceite e horário retomam oferta anterior; Camaçari, cancelamento e urgência não iniciam reserva", async () => {
+  for (const texto of ["Sim", "11 e 20 pode ser ?"]) {
+    const f = fixture(); f.turns.push({ role: "assistant", content: "Posso verificar os horários disponíveis para quinta-feira. Gostaria que eu faça isso?" });
+    f.port.cadastroConsulta = async (_texto, iniciar) => iniciar ? "Horários livres de quinta: 08:00." : null;
+    await processMessage({ ...message, text: texto }, { ...config, agendaConsultas: true }, f.port);
+    assert.equal(f.generations(), 0); assert.match(f.sentTexts[0], /Horários livres/);
+  }
+  for (const texto of ["Quero agendar em Camaçari", "Quero cancelar minha consulta", "Quero remarcar", "Não quero agendar", "Estou com falta de ar, tem horário?", "Quanto custa a consulta?"]) {
+    const f = fixture(); f.port.cadastroConsulta = async (_texto, iniciar) => { assert.equal(iniciar, false); return null; };
+    await processMessage({ ...message, text: texto }, { ...config, agendaConsultas: true }, f.port);
+    assert.equal(f.generations(), 1);
+  }
+});
+
+test("dúvida devolvida pelo cadastro ativo continua no atendimento sem entrar em repetição", async () => {
+  const f = fixture();
+  f.port.cadastroConsulta = async () => null;
+  assert.equal(await processMessage({ ...message, text: "Posso agendar para outra pessoa?" }, { ...config, agendaConsultas: true }, f.port), "enviada");
+  assert.equal(f.generations(), 1);
+});
+
 test("pergunta o nome no início, substitui marcador e mantém o tratamento após o histórico expirar", async () => {
   const f = fixture();
   f.port.generate = async () => "Olá! 😊 Eu sou a Thaís. Como posso ajudar hoje?";
