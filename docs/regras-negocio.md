@@ -1,5 +1,16 @@
 # Regras do protótipo
 
+## Atendimento da Dra. Juliana Matos
+
+- O prompt específico fica em `config/chatbots/dra-juliana-matos.json` e é salvo explicitamente no chatbot da instância `drjulianaatendeai`; o arquivo não é importado automaticamente no deploy.
+- Pedidos gerais sobre a consulta recebem a apresentação da médica antes dos detalhes. A conversa segue com investimento, endereço e horário, sem bloquear o preço por perguntas de qualificação nem repetir a apresentação em dúvidas específicas.
+- Em Salvador, na Clínica Bonvida: consulta com duração média de 40 minutos; cartão R$ 430,00 em até 2x de R$ 215,00; à vista/Pix R$ 400,00; retorno com 30 dias e nota fiscal. Não presumir gratuidade ou outras condições do retorno.
+- Endereço de Salvador: Av. Professor Magalhães Neto, nº 1541, Bloco A, 7º andar, Sala 7024, Centro Médico do Hospital da Bahia, Pituba. Atendimento às quintas-feiras, das 8h às 11h20; o período não comprova vaga disponível. Crianças são atendidas a partir de 5 anos.
+- A mensagem de consulta confirmada só é enviada após confirmação real da agenda ou equipe. Na Clínica Bonvida, a recepção é pelas secretárias Dyl ou Camila. Aceitar as condições ou manifestar interesse não confirma uma reserva.
+- Em Camaçari, atende no Hospital SEMERGE; marcação pelo WhatsApp (71) 3621-4575, `https://api.whatsapp.com/send?phone=557136214575`. Valores, horários, endereço e secretárias de Salvador não são atribuídos a essa unidade; as condições locais são confirmadas diretamente com o hospital.
+
+## Regras gerais do agente
+
 - O agente usa exclusivamente a configuração do chatbot SDR vinculado à instância Evolution: persona, missão, prompt de atendimento, fallback, transferência e fluxos. O contexto geral legado do orquestrador pode continuar armazenado para compatibilidade, mas não é exibido nem enviado à IA. Sem chatbot com prompt, o worker não responde. Alterações do chatbot salvas por gerente ou super administrador valem para as próximas mensagens processadas.
 - No início da conversa, o agente pergunta o nome do cliente se ele ainda não se apresentou. Depois de informado, usa o primeiro nome nas respostas seguintes. O nome confirmado fica no Redis por até 100 dias, separado do histórico curto; uma apresentação explícita pode corrigi-lo. Marcadores de modelo, como `[NOME]`, nunca são enviados ao WhatsApp. Sem nome confirmado, o agente pede como chamar o cliente em vez de inventar um nome.
 - Uma mensagem individual enviada manualmente pelo WhatsApp (`fromMe=true`) pausa as respostas da IA naquela conversa por 30 minutos contados da última saída manual. Uma nova saída manual renova o prazo; eventos antigos não o reduzem. Ecos dos envios identificados da própria IA não pausam. Mensagens do cliente recebidas durante a pausa não recebem resposta automática tardia; depois do prazo, a IA atende novas mensagens.
