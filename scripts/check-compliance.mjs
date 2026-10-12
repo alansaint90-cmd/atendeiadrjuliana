@@ -388,6 +388,10 @@ function analyzeFile(file) {
     findings.push({ level: "error", id: "prompt-legado", file: rel, line: 1,
       msg: "O modelo inicial do chatbot não pode trazer um roteiro comercial embutido." });
   }
+  if (rel === "src/lib/consultas/repository.ts" && (!/reservaConsultaSchema.parse/.test(content) || !/FOR UPDATE/.test(content) || !/await auditar\(tx, id, "consulta_confirmada"/.test(content))) {
+    findings.push({ level: "error", id: "consulta-confirmacao", file: rel, line: 1,
+      msg: "Reservas exigem cadastro completo validado, trava da vaga e auditoria na mesma transação." });
+  }
   if (rel === "src/components/chatbots/page.tsx" && /\b(?:localStorage|loadChatbots|storageKey)\b/.test(content)) {
     findings.push({ level: "error", id: "prompt-legado", file: rel, line: 1,
       msg: "A página não pode importar prompts antigos do navegador automaticamente." });

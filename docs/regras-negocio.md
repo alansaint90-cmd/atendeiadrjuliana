@@ -9,6 +9,16 @@
 - A mensagem de consulta confirmada só é enviada após confirmação real da agenda ou equipe. Na Clínica Bonvida, a recepção é pelas secretárias Dyl ou Camila. Aceitar as condições ou manifestar interesse não confirma uma reserva.
 - Em Camaçari, atende no Hospital SEMERGE; marcação pelo WhatsApp (71) 3621-4575, `https://api.whatsapp.com/send?phone=557136214575`. Valores, horários, endereço e secretárias de Salvador não são atribuídos a essa unidade; as condições locais são confirmadas diretamente com o hospital.
 
+## Agenda de consultas de Salvador
+
+- A agenda de consultas é distinta das mensagens agendadas. Quintas-feiras têm seis inícios: 8h, 8h40, 9h20, 10h, 10h40 e 11h20, no fuso America/Sao_Paulo. A última consulta termina às 12h. Vagas são geradas para a data consultada, até 180 dias à frente; a IA busca as próximas oito quintas.
+- Antes da reserva são obrigatórios nome completo do paciente, telefone para contato, data de nascimento, CEP, rua, número (ou s/n), bairro, cidade e UF. Complemento é opcional. Dados pertencem ao paciente, mesmo quando um responsável inicia a conversa. O atendimento permanece a partir de 5 anos.
+- No WhatsApp, a ferramenta inicia a coleta administrativa; cada resposta preenche um campo validado. O cadastro sobrevive ao histórico curto por até 24h, isolado por conversa/instância. Perguntas, urgências e pedidos humanos retornam ao prompt. O paciente pode interromper com “cancelar cadastro” ou refazer com “corrigir” na conferência.
+- Conferência explícita do resumo e horário precede a reserva. O servidor valida o cadastro completo e grava reserva/auditoria atomicamente. Só então produz a confirmação com data, horário e protocolo. Falha ou dados incompletos não confirmam consulta.
+- Uma vaga admite apenas uma reserva ativa, inclusive entre chips. Trava transacional e índice único impedem concorrência. Se ocupada, o cadastro oferece as próximas vagas livres e pede nova escolha; não muda o horário silenciosamente.
+- Gerente ou superior consulta os cadastros, reserva manualmente e cancela com trava de versão e confirmação de três segundos. Cancelar preserva o registro e libera a vaga; não envia mensagem automaticamente. Auditoria guarda a ação, sem copiar dados pessoais.
+- `agendaConsultas` é opt-in no chatbot. A rotina não agenda em Camaçari, não remarca nem cancela por IA; esses pedidos seguem o atendimento existente. Ativação e migração no servidor precisam ocorrer antes de testar a agenda publicada.
+
 ## Regras gerais do agente
 
 - O agente usa exclusivamente a configuração do chatbot SDR vinculado à instância Evolution: persona, missão, prompt de atendimento, fallback, transferência e fluxos. O contexto geral legado do orquestrador pode continuar armazenado para compatibilidade, mas não é exibido nem enviado à IA. Sem chatbot com prompt, o worker não responde. Alterações do chatbot salvas por gerente ou super administrador valem para as próximas mensagens processadas.
@@ -38,7 +48,7 @@
 
 ## Estrutura PostgreSQL
 
-- A instalação atual é de uma única empresa. O schema Drizzle em `src/lib/db/schema.ts` define usuários, sessões, departamentos, membros, contatos, etiquetas, vínculos de etiquetas, chatbots, fluxos, canais, conversas, mensagens, campanhas, destinatários e auditoria. Com as extensões de identidade, CRM, agendamentos e recibos de webhook, mais as tabelas de configuração e migrações, são 32 tabelas.
+- A instalação atual é de uma única empresa. O schema Drizzle em `src/lib/db/schema.ts` define usuários, sessões, departamentos, membros, contatos, etiquetas, vínculos de etiquetas, chatbots, fluxos, canais, conversas, mensagens, campanhas, destinatários e auditoria. Com as extensões de identidade, CRM, agendamentos e recibos de webhook, mais as tabelas de configuração e migrações, são 35 tabelas, incluindo horários e reservas de consultas.
 - As migrações SQL versionadas são aplicadas pelo servidor na inicialização, quando existe `DATABASE_URL`, ou pelo comando `pnpm db:migrate`. O banco deve existir (PostgreSQL 16) e o usuário deve poder criar tabelas. Não há conexão nem alteração do banco durante o build.
 - O Docker inclui os arquivos de migração. A aplicação usa uma transação e trava PostgreSQL para serializar deploys; checksum impede editar uma migração já aplicada. Novas mudanças exigem novas migrações (`pnpm db:generate`). Não executar `drizzle-kit push` sobre produção.
 - O bootstrap preserva as tabelas e os valores de credenciais das versões anteriores. As migrações não importam os exemplos da interface ou prompts salvos no navegador.

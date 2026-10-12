@@ -43,6 +43,7 @@ const arquivoLongo = (linhas) =>
 const QUATRO = 'created_at: x, updated_at: x, deleted_at: x, is_deleted: x';
 
 const CASOS = {
+  "src/lib/consultas/repository.ts": "export async function reservarConsulta() { return 'confirmada'; }",
   "src/fabrica-boa.ts": `const datas = () => ({ ${QUATRO} }); const audit = () => ({ ...datas(), modified_by: x }); ${tabela("fabrica_boa", "...audit()")}`,
   "src/fabrica-incompleta.ts": `const audit = () => ({ ${QUATRO} }); ${tabela("fabrica_incompleta", "...audit()")}`,
   "src/fabrica-falsa.ts": `const audit = () => ({ observacao: "modified_by created_at updated_at deleted_at is_deleted" }); ${tabela("fabrica_falsa", "...audit()")}`,
@@ -129,6 +130,7 @@ try {
 
   /** @type {[string, () => void][]} */
   const CHECAGENS = [
+    ["consulta sem validação, trava e auditoria reprova", reprova("consultas/repository.ts", "consulta-confirmacao")],
     ["fábricas locais compostas passam", passa("fabrica-boa.ts")],
     ["fábrica incompleta reprova", reprova("fabrica-incompleta.ts", "tabela-sem-auditoria")],
     ["texto não substitui colunas", reprova("fabrica-falsa.ts", "tabela-sem-auditoria")],

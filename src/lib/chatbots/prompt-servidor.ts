@@ -20,6 +20,7 @@ export function montarInstrucoesDoAgente(chatbot: Chatbot | null): string {
     `Missão: ${chatbot.mission}`,
     "Prompt de atendimento obrigatório:",
     contexto,
+    ...(chatbot.agendaConsultas ? ["Agenda de consultas do Atende AI habilitada: novas consultas em Salvador usam iniciar_agendamento_consulta. O servidor coleta o cadastro completo, pede conferência e confirma somente após gravar a reserva. Nunca afirme confirmação de nova consulta por texto livre. Camaçari continua com o hospital."] : []),
     ...(promptDaThais ? ["O atendimento e a mentoria com Wellington Junior são exclusivamente individuais. Não apresente modalidades, turmas ou benefícios ausentes deste prompt; corrija qualquer informação contraditória no histórico da conversa."] : []),
     `Se não souber responder: ${chatbot.fallback}`,
     `Transferência humana: ${chatbot.transferHuman ? `habilitada para ${chatbot.destination}. Quando solicitada, acione transferir_para_humano. O servidor enviará o aviso salvo; não invente confirmação de transferência.` : "desabilitada. Não prometa transferir nem diga que transferiu."}`,

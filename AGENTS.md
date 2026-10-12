@@ -222,6 +222,16 @@ manual; gerente administra apenas SDRs. Suspensão, troca de senha ou fator revo
 sessões. Nenhum teste de autenticação usa banco de produção.
 
 Configurações, integrações e estado do agente são exclusivos do super administrador.
+Agenda de consultas segue ADR-0013: agenda única da Dra. Juliana em Salvador,
+quintas às 8h, 8h40, 9h20, 10h, 10h40 e 11h20 (Brasília), 40 minutos cada.
+Nome completo, telefone, nascimento e endereço com CEP, rua, número, bairro,
+cidade e UF são obrigatórios; complemento é opcional. Conferir os dados antes
+da reserva. Só confirmar após gravar a reserva e auditoria na mesma transação.
+Trava da vaga e índice único impedem duplicidade mesmo entre chips. Cadastro
+temporário no Redis é isolado por conversa/instância, expira em 24h e não usa
+somente o histórico curto. Entrega incerta da confirmação não repete o envio.
+O agente só inicia a coleta quando agendaConsultas estiver habilitado no chatbot.
+Gerente administra a agenda; não registrar dados do paciente nos logs de auditoria.
 Até três números na mesma Evolution usam EVOLUTION_INSTANCE_NAME e as opcionais
 EVOLUTION_SECOND_INSTANCE_NAME e EVOLUTION_THIRD_INSTANCE_NAME. Cada instância usa seu próprio chatbot e prompt para testes A/B. Ao abrir Chatbot IA, vínculos compartilhados são separados com cópia inicial do prompt e auditoria; edições posteriores não afetam os outros números.
 Webhook aceita somente essas instâncias; resposta e áudio usam a instância recebida.

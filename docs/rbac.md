@@ -41,6 +41,7 @@ antes de virar codigo.
 | Tags (ADR-0008) | admin | admin | admin | admin |
 | Follow-ups (ADR-0008) | admin | — | admin | — |
 | Agendamentos individuais (ADR-0008) | admin | admin | admin | admin (cancelar) |
+| Agenda de consultas e cadastro do paciente | admin | admin | admin | admin (cancelar) |
 
 Recurso novo: acrescente a linha aqui ANTES de escrever a action.
 

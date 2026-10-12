@@ -4,7 +4,7 @@ import { digest } from "./message";
 import { ProviderError, type Turn, type RespostaGerada } from "./providers";
 import { extrairNomeInformado, instrucoesComNome, respostaComNome, personaDoAgente, mesmoNome, removerRotuloDaPersona } from "./nome";
 
-export interface DeliveryState { status: "gerando" | "gerada" | "enviando" | "enviada" | "incerta" | "falhou"; attempts: number; reply?: string; partes?: string[]; providerIds?: string[]; transcript?: string; code?: string; configHash?: string; providerId?: string; transferencia?: boolean }
+export interface DeliveryState { status: "gerando" | "gerada" | "enviando" | "enviada" | "incerta" | "falhou"; attempts: number; reply?: string; partes?: string[]; providerIds?: string[]; transcript?: string; code?: string; configHash?: string; providerId?: string; transferencia?: boolean; consulta?: boolean }
 export interface ProcessingPort {
   read(): Promise<DeliveryState | null>;
   write(state: DeliveryState): Promise<void>;
@@ -15,6 +15,7 @@ export interface ProcessingPort {
   enabled(): Promise<boolean>;
   transcribe?(config: AgentConfig, message: IncomingMessage): Promise<string>;
   transferir?(destino: string): Promise<void>;
+  cadastroConsulta?(texto: string, iniciar: boolean): Promise<string | null>;
   generate(config: AgentConfig, history: Turn[], text: string): Promise<RespostaGerada>;
   send(config: AgentConfig, number: string, text: string): Promise<string>;
   registrarParte?(id: string): Promise<void>;
@@ -47,6 +48,7 @@ export async function processMessage(message: IncomingMessage, config: AgentConf
     await port.write({ status: "gerando", attempts, configHash, transcript });
     let reply: string;
     let transferencia = false;
+    let consulta = false;
     let partes: string[] | undefined;
     try {
       if (message.audio && !transcript) {
@@ -71,9 +73,16 @@ export async function processMessage(message: IncomingMessage, config: AgentConf
       const contextoAtual = persona ? historico.filter(turno => turno.role === "user" || turno.revisao === revisao) : historico;
       const saudacao = /^(?:oi+|ol[aá]+|bom dia|boa tarde|boa noite)[\s!.😊👋]*$/iu.test((transcript ?? message.text).trim());
       if (!nome && !historico.length && !message.midia && saudacao && config.openingMessages?.length) partes = config.openingMessages;
-      const gerada = partes ? partes.join("\n\n") : message.midia && config.atendimento?.transferMedia ? { transferir: true }
-        : await port.generate({ ...config, AI_SYSTEM_PROMPT: instrucoes }, contextoAtual, transcript ?? message.text);
-      if (typeof gerada !== "string") {
+      const cadastro = config.agendaConsultas && port.cadastroConsulta ? await port.cadastroConsulta(transcript ?? message.text, false) : null;
+      const gerada = cadastro ?? (partes ? partes.join("\n\n") : message.midia && config.atendimento?.transferMedia ? { transferir: true as const }
+        : await port.generate({ ...config, AI_SYSTEM_PROMPT: instrucoes }, contextoAtual, transcript ?? message.text));
+      if (cadastro) { consulta = true; partes = undefined; reply = cadastro; }
+      else if (typeof gerada !== "string" && "agendar" in gerada) {
+        if (!config.agendaConsultas || !port.cadastroConsulta) throw new ProviderError("agenda_indisponivel");
+        const inicio = await port.cadastroConsulta(transcript ?? message.text, true);
+        if (!inicio) throw new ProviderError("agenda_indisponivel");
+        consulta = true; reply = inicio;
+      } else if (typeof gerada !== "string") {
         if (!(config.atendimento?.transferHuman || (message.midia && config.atendimento?.transferMedia)) || !port.transferir) throw new ProviderError("transferencia_indisponivel");
         transferencia = true;
         reply = config.atendimento.transferNotice.replace(/\[(?:NOME|NOME DO CLIENTE)\]|\{NOME\}/giu, nome?.split(" ")[0] ?? "").trim()
@@ -85,7 +94,7 @@ export async function processMessage(message: IncomingMessage, config: AgentConf
       await port.write({ status: attempts >= 3 ? "falhou" : "gerando", attempts, code, configHash, transcript });
       return attempts >= 3 ? "falhou" : "repetir";
     }
-    state = { status: "gerada", attempts, reply, partes, configHash, transcript, transferencia };
+    state = { status: "gerada", attempts, reply, partes, configHash, transcript, transferencia, consulta };
     await port.write(state);
   }
   if (!await port.enabled()) return "pausada";
@@ -93,7 +102,7 @@ export async function processMessage(message: IncomingMessage, config: AgentConf
     state = { ...state, reply: respostaComNome(state.reply!, await port.contactName?.() ?? null) };
     await port.write(state);
   }
-  const semRotulo = state.transferencia || state.partes ? state.reply! : removerRotuloDaPersona(state.reply!, personaDoAgente(config.AI_SYSTEM_PROMPT));
+  const semRotulo = state.transferencia || state.partes || state.consulta ? state.reply! : removerRotuloDaPersona(state.reply!, personaDoAgente(config.AI_SYSTEM_PROMPT));
   if (semRotulo !== state.reply) {
     state = { ...state, reply: semRotulo };
     await port.write(state);

@@ -42,6 +42,8 @@ export function ChatbotEditor({ initial, creating, onSave, onClose, error }: Pro
           }} /></label>)}
         </section>
         <section className="bot-section"><h2>Ajustes gerais</h2><p>Configure suas preferências de atendimento.</p><div className="bot-settings-grid">
+          <label className="bot-switch"><input type="checkbox" checked={draft.agendaConsultas ?? false} onChange={e => update("agendaConsultas", e.target.checked)} />Agendar consultas no Atende AI após cadastro completo</label>
+          <small>Agenda única da Dra. Juliana em Salvador: quintas-feiras, seis vagas entre 8h e 11h20. Requer nome completo, telefone, nascimento e endereço, com conferência do paciente.</small>
           <label>Atraso na resposta (em segundos)<input name="delay" type="number" min="0" max="3600" step="1" required value={draft.delay} onChange={e => update("delay", e.target.valueAsNumber)} /><small>Digite 0 para responder imediatamente.</small></label>
           <label className="bot-switch"><input type="checkbox" checked={draft.transferMedia} onChange={e => update("transferMedia", e.target.checked)} />Transferir a conversa ao receber imagens ou documentos</label>
         </div><label className="bot-switch"><input type="checkbox" checked={draft.transferHuman} onChange={e => update("transferHuman", e.target.checked)} />Transferir a conversa quando o contato solicitar atendimento humano</label>

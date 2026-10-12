@@ -19,6 +19,7 @@ import { db } from "../db/client";
 import { registrarEnvioIa } from "../operacao/atribuir-ia";
 import { pausaManualAtiva, pausarTransferencia } from "./pausa";
 import { transferirAtendimento } from "../operacao/transferir";
+import { cadastroDaConversa } from "../consultas/fluxo-servidor";
 
 const streamResult = z.array(z.tuple([z.string(), z.array(z.tuple([z.string(), z.array(z.string())]))]));
 let started = false;
@@ -73,8 +74,14 @@ export async function runAgentTick(substituicoes: Partial<typeof dependenciasPad
       let result = "ignorada";
       if (message && config.success) {
         const store = messageStore(client, token, message);
+        const atendimentoAtivo = async () => {
+          const atual = configurarAgente(settingsDaInstancia(await dependencies.settings(), instancia), await dependencies.chatbot(instancia));
+          return atual.success && JSON.stringify(atual.data) === JSON.stringify(config.data)
+            && !await pausaManualAtiva(client, message.conversation) && await client.get(agentKeys.lock) === token;
+        };
         result = await pausaManualAtiva(client, message.conversation) ? "pausa_manual" : await processMessage(message, config.data, {
           ...store, generate: dependencies.generate, send: dependencies.send, transcribe: transcribeAudio,
+          cadastroConsulta: cadastroDaConversa(client, token, message, instancia, atendimentoAtivo),
           registrarParte: async id => {
             await followups.outgoing(instancia, id);
             await dependencies.registrarEnvio(instancia, id);
@@ -83,14 +90,7 @@ export async function runAgentTick(substituicoes: Partial<typeof dependenciasPad
             await dependencies.transferir(instancia, message.number, destino);
             await pausarTransferencia(client, token, message.conversation);
           },
-          enabled: async () => {
-            const currentSettings = await dependencies.settings();
-            const currentBot = await dependencies.chatbot(instancia);
-            const current = configurarAgente(settingsDaInstancia(currentSettings, instancia), currentBot);
-            return current.success && JSON.stringify(current.data) === JSON.stringify(config.data)
-              && !await pausaManualAtiva(client, message.conversation)
-              && await client.get(agentKeys.lock) === token;
-          },
+          enabled: atendimentoAtivo,
         });
         if (result === "pausada" && await pausaManualAtiva(client, message.conversation)) result = "pausa_manual";
         const state = await store.read();
@@ -100,7 +100,7 @@ export async function runAgentTick(substituicoes: Partial<typeof dependenciasPad
             await dependencies.registrarEnvio(config.data.EVOLUTION_INSTANCE_NAME, state.providerId);
             await followups.outgoing(config.data.EVOLUTION_INSTANCE_NAME, state.providerId);
           }
-          if (!state.transferencia && followupConfig.instance === config.data.EVOLUTION_INSTANCE_NAME && state.configHash === digest(JSON.stringify(config.data))) {
+          if (!state.transferencia && !state.consulta && followupConfig.instance === config.data.EVOLUTION_INSTANCE_NAME && state.configHash === digest(JSON.stringify(config.data))) {
             await followups.schedule(message, followupConfig);
           }
         }

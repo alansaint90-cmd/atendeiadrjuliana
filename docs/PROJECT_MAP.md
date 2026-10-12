@@ -6,12 +6,12 @@
 
 | Metrica | Total |
 |---------|-------|
-| Arquivos TS/TSX | 140 |
-| Tabelas (Drizzle) | 31 |
-| Server Actions (arquivos) | 11 |
+| Arquivos TS/TSX | 149 |
+| Tabelas (Drizzle) | 33 |
+| Server Actions (arquivos) | 12 |
 | Rotas de API | 6 |
 | Paginas | 4 |
-| Componentes | 18 |
+| Componentes | 20 |
 
 ## Arvore (profundidade 3)
 
@@ -45,6 +45,9 @@ components/
   chatbots/
     editor.tsx
     page.tsx
+  consultas/
+    paciente-form.tsx
+    page.tsx
   followups/
     page.tsx
   operacao/
@@ -68,6 +71,7 @@ lib/
   actions/
     agendamentos.ts
     chatbots.ts
+    consultas.ts
     crm.ts
     followups.ts
     operacao.ts
@@ -120,6 +124,12 @@ lib/
     repository.ts
     schema.ts
     server-repository.ts
+  consultas/
+    calendario.ts
+    fluxo-servidor.ts
+    fluxo.ts
+    repository.ts
+    schema.ts
   crm/
     acesso.ts
     cadastros.ts
@@ -188,6 +198,12 @@ instrumentation.ts
 ```
 
 ## Tabelas (Drizzle)
+
+### `atendeia_agenda_horarios` — src/lib/db/schema/agenda-consultas.ts
+`id`, `inicio`, `modified_by`
+
+### `atendeia_agenda_horarios_reservas` — src/lib/db/schema/agenda-consultas.ts
+`id`, `horarioId`, `identidade`, `nomeCompleto`, `cep`, `bairro`, `status`, `modified_by`
 
 ### `auditoria` — src/lib/db/schema/auditoria.ts
 `id`, `user_id`, `acao`, `tabela`, `registro_id`, `detalhes`, `dados_anteriores`, `dados_novos`, `created_at`
@@ -297,6 +313,7 @@ _(colunas nao detectadas)_
 
 - `src/lib/actions/agendamentos.ts`: `carregarAgendamentos()`, `gravarAgendamento()`, `cancelarEnvioAgendado()`
 - `src/lib/actions/chatbots.ts`: `carregarChatbots()`, `salvarChatbot()`
+- `src/lib/actions/consultas.ts`: `carregarAgendaConsultas()`, `confirmarConsulta()`, `cancelarConsultaAgendada()`
 - `src/lib/actions/crm.ts`: `carregarCrm()`, `adicionarFunil()`, `adicionarMotivo()`, `modificarMotivo()`, `salvarAcessosFunis()`, `adicionarOportunidade()`, `fecharNegocio()`, `moverNegocio()`
 - `src/lib/actions/followups.ts`: `carregarFollowups()`, `salvarFollowups()`
 - `src/lib/actions/operacao.ts`: `carregarOperacao()`
