@@ -15,6 +15,19 @@ indicando sucesso e alerta, sem substituir estados por cores decorativas.
 
 ## Principio: Colocation (colocate first, extract later)
 
+A camada visual compartilhada, importada no layout raiz, fica em
+`src/styles/design-juliana.css`: roxo nas ações, botões em pílula, cartões de 16px
+e campos de 48px. Abrange painel, agenda, conversas, chatbot, automações, tags,
+CRM, equipe, configurações, perfil e entrada. Os tokens Tailwind/shadcn usam as
+mesmas variáveis sem modificar os componentes vendorizados. As cores de status
+e as cores de tags escolhidas pelo usuário mantêm seu significado. A rota
+`/previa-design` compara essa camada com a aparência anterior usando dados fictícios
+e o formulário real de paciente, sem gravar consultas. Só abre em desenvolvimento
+com `ATENDEIA_PREVIA_LOCAL=true`. Execute `node scripts/previa-design-local.mjs`:
+o iniciador neutraliza os valores dos arquivos de ambiente e desativa banco,
+Redis, IA e worker. A prévia não altera a autenticação do painel e permanece
+indisponível em produção. Não há alteração de regras, actions ou schema de dados.
+
 Comece colocando o componente do lado de quem usa. So mova para uma pasta
 compartilhada quando **2+ telas** realmente reusarem.
 

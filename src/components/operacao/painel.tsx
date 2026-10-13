@@ -30,16 +30,16 @@ function GraficoConversas({ pontos }: { pontos: PontoPainel[] }) {
   const x = (indice: number) => esquerda + indice * (largura - esquerda - direita) / Math.max(1, pontos.length - 1);
   const y = (valor: number) => topo + (maximo - valor) * (altura - topo - base) / maximo;
   const series = [
-    { chave: "conversas" as const, nome: "Novas conversas", cor: "#2275db" },
-    { chave: "ia" as const, nome: "Atendimento com IA", cor: "#078561" },
-    { chave: "humano" as const, nome: "Atendimento humano", cor: "#b76500" },
+    { chave: "conversas" as const, nome: "Novas conversas", cor: "var(--blue)" },
+    { chave: "ia" as const, nome: "Atendimento com IA", cor: "var(--green)" },
+    { chave: "humano" as const, nome: "Atendimento humano", cor: "var(--orange)" },
   ];
   const amostras = [...new Set([0, Math.floor((pontos.length - 1) / 2), pontos.length - 1])];
   return <>
     <div className="dashboard-legenda">{series.map(item => <span key={item.chave}><i style={{ background: item.cor }} />{item.nome}</span>)}</div>
     <svg className="dashboard-chart" viewBox={`0 0 ${largura} ${altura}`} role="img" aria-label="Evolução diária de novas conversas e atendimentos com IA e humano">
       {[0, 1, 2, 3].map(indice => { const valor = Math.round(maximo * indice / 3); return <g key={indice}>
-        <line x1={esquerda} x2={largura - direita} y1={y(valor)} y2={y(valor)} stroke="#e4eaf2" />
+        <line x1={esquerda} x2={largura - direita} y1={y(valor)} y2={y(valor)} stroke="var(--line)" />
         <text x={esquerda - 10} y={y(valor) + 4} textAnchor="end">{valor}</text>
       </g>; })}
       {pontos.length > 0 && series.map(item => <polyline key={item.chave} fill="none" stroke={item.cor} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round"

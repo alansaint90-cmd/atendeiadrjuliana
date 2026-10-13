@@ -4,20 +4,20 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 
 @theme inline {
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
-  --color-primary: #5145cd;
+  --color-background: var(--surface);
+  --color-foreground: var(--text);
+  --color-primary: var(--marca-acao);
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f3f4f6;
-  --color-secondary-foreground: #0f172a;
-  --color-muted: #f3f4f6;
-  --color-muted-foreground: #5f6b80;
-  --color-accent: #eeebff;
-  --color-accent-foreground: #0f172a;
-  --color-destructive: #b91c1c;
-  --color-border: #e2e5ee;
-  --color-input: #e2e5ee;
-  --color-ring: #5145cd;
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--surface-2);
+  --color-accent-foreground: var(--text);
+  --color-destructive: var(--red);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--marca-acao);
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
 }

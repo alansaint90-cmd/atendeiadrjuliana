@@ -6,11 +6,11 @@
 
 | Metrica | Total |
 |---------|-------|
-| Arquivos TS/TSX | 152 |
+| Arquivos TS/TSX | 156 |
 | Tabelas (Drizzle) | 33 |
 | Server Actions (arquivos) | 12 |
 | Rotas de API | 6 |
-| Paginas | 4 |
+| Paginas | 5 |
 | Componentes | 20 |
 
 ## Arvore (profundidade 3)
@@ -32,6 +32,10 @@ app/
     page.tsx
   perfil/
     _components/
+    page.tsx
+  previa-design/
+    _components/
+    page.test.tsx
     page.tsx
   error.tsx
   icon.svg
@@ -190,6 +194,7 @@ styles/
   automation.css
   base.css
   conta-menu.css
+  design-juliana.css
   features.css
   improvements.css
   layout.css
@@ -333,3 +338,4 @@ _(colunas nao detectadas)_
 - `src/app/entrar/page.tsx`
 - `src/app/page.tsx`
 - `src/app/perfil/page.tsx`
+- `src/app/previa-design/page.tsx`
