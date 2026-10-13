@@ -8,13 +8,22 @@ import type { ResumoAgenda } from "@/lib/consultas/resumo";
 import { ResumoClinica } from "./resumo-clinica";
 import { ProximasConsultas } from "./proximas-consultas";
 
-function filtroUltimosSeteDias(): FiltroPainel {
+type Atalho = "hoje" | "7dias" | "30dias" | "3meses" | "personalizado";
+const atalhos: { id: Atalho; nome: string }[] = [
+  { id: "hoje", nome: "Hoje" }, { id: "7dias", nome: "7 dias" }, { id: "30dias", nome: "30 dias" },
+  { id: "3meses", nome: "3 meses" }, { id: "personalizado", nome: "Intervalo personalizado" },
+];
+function diaLocal(data: Date) {
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-${String(data.getDate()).padStart(2, "0")}`;
+}
+function filtroAtalho(atalho: Exclude<Atalho, "personalizado">, canalId: string | null): FiltroPainel {
   const agora = new Date();
   const fim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1);
   const inicio = new Date(fim);
-  inicio.setDate(inicio.getDate() - 7);
+  if (atalho === "3meses") inicio.setMonth(inicio.getMonth() - 3);
+  else inicio.setDate(inicio.getDate() - (atalho === "hoje" ? 1 : atalho === "7dias" ? 7 : 30));
   return { inicio: inicio.toISOString(), fim: fim.toISOString(),
-    fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", canalId: null };
+    fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", canalId };
 }
 function rotuloDia(dia: string) { return dia.slice(8, 10) + "/" + dia.slice(5, 7); }
 
@@ -69,8 +78,13 @@ export function PainelOperacionalPage({ podeVerAgenda = false, aoVerAgenda }: Pa
   const [dados, definirDados] = useState<PainelOperacional | null>(null);
   const [ocupado, definirOcupado] = useState(true);
   const [erro, definirErro] = useState("");
+  const [atalho, definirAtalho] = useState<Atalho>("7dias");
+  const canalId = null;
+  const [personalizado, definirPersonalizado] = useState<FiltroPainel | null>(null);
+  const [inicioManual, definirInicioManual] = useState("");
+  const [fimManual, definirFimManual] = useState("");
   const requisicao = useRef(0);
-  const filtro = useMemo(() => filtroUltimosSeteDias(), []);
+  const filtro = useMemo(() => atalho === "personalizado" ? personalizado && { ...personalizado, canalId } : filtroAtalho(atalho, canalId), [atalho, canalId, personalizado]);
   const carregar = useCallback(async (selecionado: FiltroPainel) => {
     const atual = ++requisicao.current;
     definirOcupado(true); definirErro(""); definirDados(null);
@@ -85,9 +99,26 @@ export function PainelOperacionalPage({ podeVerAgenda = false, aoVerAgenda }: Pa
     finally { if (atual === requisicao.current) definirOcupado(false); }
   }, []);
   useEffect(() => { if (!filtro) return; const timer = window.setTimeout(() => void carregar(filtro), 0); return () => window.clearTimeout(timer); }, [filtro, carregar]);
+  function aplicarPersonalizado() {
+    if (!inicioManual || !fimManual || inicioManual > fimManual) { definirErro("Escolha datas válidas, com início anterior ao fim."); return; }
+    const inicio = new Date(`${inicioManual}T00:00:00`), fim = new Date(`${fimManual}T00:00:00`);
+    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) { definirErro("Escolha datas válidas."); return; }
+    fim.setDate(fim.getDate() + 1);
+    definirPersonalizado({ inicio: inicio.toISOString(), fim: fim.toISOString(),
+      fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", canalId });
+  }
   return <div className="page-stack dashboard-page">
     <ResumoClinica dados={dados} agenda={agenda} podeVerAgenda={podeVerAgenda} aoVerAgenda={aoVerAgenda}
-      periodo="Últimos 7 dias" />
+      periodo={atalho === "7dias" ? "Últimos 7 dias" : atalhos.find(a => a.id === atalho)?.nome ?? "Período selecionado"} filtros={<section className="dashboard-filtros" aria-label="Filtros do painel">      <div className="dashboard-atalhos" role="group" aria-label="Período">
+        {atalhos.map(item => <button key={item.id} type="button" className={atalho === item.id ? "ativo" : ""} aria-pressed={atalho === item.id}
+          onClick={() => { definirAtalho(item.id); definirErro(""); if (item.id === "personalizado") { definirPersonalizado(null); definirDados(null); } }}>{item.nome}</button>)}
+      </div>
+      {atalho === "personalizado" && <div className="dashboard-personalizado">
+        <label>De<input type="date" value={inicioManual} max={diaLocal(new Date())} onChange={evento => definirInicioManual(evento.target.value)} /></label>
+        <label>Até<input type="date" value={fimManual} max={diaLocal(new Date())} onChange={evento => definirFimManual(evento.target.value)} /></label>
+        <button type="button" onClick={aplicarPersonalizado}>Aplicar</button>
+      </div>}
+</section>} />
     {podeVerAgenda && <ProximasConsultas agenda={agenda} erro={erroAgenda} aoVerAgenda={aoVerAgenda} aoTentarNovamente={() => atualizarAgenda(r => r + 1)} />}
     {ocupado && <p role="status">Consultando indicadores…</p>}
     {erro && <p role="alert">{erro} <button type="button" onClick={() => filtro && void carregar(filtro)}>Tentar novamente</button></p>}

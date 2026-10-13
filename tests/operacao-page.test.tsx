@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { OperacaoPage } from "@/components/operacao/page";
 import { carregarOperacao } from "@/lib/actions/operacao";
 import { carregarPainel } from "@/lib/actions/painel";
@@ -57,9 +57,18 @@ test("dashboard usa os últimos sete dias e omite os blocos removidos", async ()
   expect(screen.queryByText("Leads qualificados")).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Resumo geral" })).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Resumo do período" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("region", { name: "Filtros do painel" })).not.toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "Filtros do painel" })).toBeInTheDocument();
   expect(screen.queryByText("Uma manhã bem organizada")).not.toBeInTheDocument();
   expect(carregarPainel).toHaveBeenCalledWith(expect.objectContaining({ canalId: null }));
+  fireEvent.click(screen.getByRole("button", { name: "Hoje", exact: true }));
+  await waitFor(() => expect(carregarPainel).toHaveBeenCalledTimes(2));
+  const filtroHoje = vi.mocked(carregarPainel).mock.calls[1][0];
+  expect(new Date(filtroHoje.fim).getTime() - new Date(filtroHoje.inicio).getTime()).toBe(86400000);
+  fireEvent.click(screen.getByRole("button", { name: "Intervalo personalizado" }));
+  fireEvent.change(screen.getByLabelText("De"), { target: { value: "2026-10-01" } });
+  fireEvent.change(screen.getByLabelText("Até"), { target: { value: "2026-10-05" } });
+  fireEvent.click(screen.getByRole("button", { name: "Aplicar" }));
+  await waitFor(() => expect(carregarPainel).toHaveBeenCalledTimes(3));
 });
 
 test("falha de consulta não vira banco vazio e sessão recusada remove dados anteriores", async () => {

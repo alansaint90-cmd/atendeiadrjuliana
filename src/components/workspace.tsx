@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 import { PainelShell } from "./painel-shell";
 import { nav } from "@/lib/demo/data";
 import { demoViews } from "@/lib/demo/views";
@@ -20,7 +19,6 @@ export function Workspace({ papel, nome, email, foto, rotaInicial = "dashboard" 
   const gestor = papel === "admin" || papel === "super_admin";
   return <PainelShell papel={papel} nome={nome} email={email} foto={foto} rota={route} titulo={route === "plans" ? "Minha assinatura" : nav.find(item => item[0] === route)?.[1] ?? "Dashboard"} aoNavegar={setRoute}>
       <main className="content">
-        <Link href="/crm">CRM · Kanban e oportunidades</Link>
         {/* Keep form drafts mounted across navigation, but hide inactive sections. */}
         {gestor && <><div hidden={route !== "chatbot"} className="page-stack"><ChatbotsPage /></div>
         <div hidden={route !== "followups"}><FollowupsPage ativo={route === "followups"} /></div>
