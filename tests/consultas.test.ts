@@ -71,6 +71,7 @@ test("reserva persiste paciente, bloqueia duplicidade entre chips, audita e canc
     const referencia = Date.parse(`${dia()}T07:00:00-03:00`);
     const resumo = await consultarResumoAgenda(banco, referencia);
     assert.equal(resumo.confirmadas, 1); assert.equal(resumo.livres.length, 5);
+    assert.deepEqual(resumo.proximas, [{ id: reserva.id, nome: paciente.nomeCompleto, inicio: vagas[0].inicio }]);
     assert.equal(resumo.livres.includes(vagas[0].inicio), false);
     assert.equal(reserva.nomeCompleto, paciente.nomeCompleto);
     assert.equal((await reservarConsulta(banco, pedido, origem)).id, reserva.id, "repetição não cria outra consulta");
@@ -89,6 +90,7 @@ test("reserva persiste paciente, bloqueia duplicidade entre chips, audita e canc
     const aposCancelar = await consultarResumoAgenda(banco, referencia);
     assert.equal(aposCancelar.confirmadas, 1, "a reserva disputada permanece; a cancelada não conta");
     assert.equal(aposCancelar.livres.includes(vagas[0].inicio), true);
+    assert.equal(aposCancelar.proximas.some(c => c.id === reserva.id), false);
     const tarde = await consultarResumoAgenda(banco, Date.parse(`${dia()}T12:00:00-03:00`));
     assert.notEqual(tarde.dia, dia()); assert.equal(tarde.livres.length, 6);
     await reservarConsulta(banco, pedido, contexto());

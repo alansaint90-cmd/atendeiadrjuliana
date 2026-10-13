@@ -6,12 +6,12 @@
 
 | Metrica | Total |
 |---------|-------|
-| Arquivos TS/TSX | 158 |
+| Arquivos TS/TSX | 159 |
 | Tabelas (Drizzle) | 33 |
 | Server Actions (arquivos) | 12 |
 | Rotas de API | 6 |
 | Paginas | 5 |
-| Componentes | 21 |
+| Componentes | 22 |
 
 ## Arvore (profundidade 3)
 
@@ -57,6 +57,7 @@ components/
   operacao/
     page.tsx
     painel.tsx
+    proximas-consultas.tsx
     resumo-clinica.tsx
   tags/
     page.tsx

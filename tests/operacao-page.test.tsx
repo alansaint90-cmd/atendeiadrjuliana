@@ -13,7 +13,7 @@ const painelVazio = { abertas: 0, pendentes: 0, atendimentoIa: 0, atendimentoHum
 
 test("gerente vê métricas reais, percentual e abre a agenda", async () => {
   vi.mocked(carregarPainel).mockResolvedValue({ ok: true, dados: { ...painelVazio, novas: 24, atendidasIa: 18, totalAtendidas: 24 } });
-  vi.mocked(carregarResumoAgenda).mockResolvedValue({ ok: true, dados: { dia: "2026-10-15", confirmadas: 4, livres: ["2026-10-15T13:40:00.000Z", "2026-10-15T14:20:00.000Z"] } });
+  vi.mocked(carregarResumoAgenda).mockResolvedValue({ ok: true, dados: { dia: "2026-10-15", confirmadas: 4, livres: ["2026-10-15T13:40:00.000Z", "2026-10-15T14:20:00.000Z"], proximas: [{ id: "consulta-teste", nome: "Paciente Teste", inicio: "2026-10-15T11:00:00.000Z" }] } });
   const abrir = vi.fn();
   render(<OperacaoPage rota="dashboard" podeVerAgenda aoVerAgenda={abrir} />);
   const resumo = within(screen.getByRole("region", { name: "Resumo da clínica" }));
@@ -23,6 +23,12 @@ test("gerente vê métricas reais, percentual e abre a agenda", async () => {
   expect(resumo.getByText("2")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Ver agenda" }));
   expect(abrir).toHaveBeenCalledOnce();
+  const consultas = within(screen.getByRole("region", { name: "Próximas consultas" }));
+  expect(consultas.getByText("Paciente Teste")).toBeInTheDocument();
+  expect(consultas.getByText("08:00")).toBeInTheDocument();
+  expect(consultas.queryByText("Paciente fictício")).not.toBeInTheDocument();
+  fireEvent.click(consultas.getByRole("button", { name: "Ver todos os horários" }));
+  expect(abrir).toHaveBeenCalledTimes(2);
 });
 
 test("SDR não solicita dados da agenda e falha não simula vagas vazias", async () => {
@@ -30,6 +36,7 @@ test("SDR não solicita dados da agenda e falha não simula vagas vazias", async
   const tela = render(<OperacaoPage rota="dashboard" />);
   await screen.findByText("Nenhum contato com atividade no período.");
   expect(carregarResumoAgenda).not.toHaveBeenCalled();
+  expect(screen.queryByRole("region", { name: "Próximas consultas" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Ver agenda" })).not.toBeInTheDocument();
   tela.unmount();
   vi.mocked(carregarResumoAgenda).mockResolvedValue({ ok: false, erro: "Agenda indisponível." });

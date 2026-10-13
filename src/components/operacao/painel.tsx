@@ -7,6 +7,7 @@ import { icon } from "@/lib/demo/icons";
 import { carregarResumoAgenda } from "@/lib/actions/consultas";
 import type { ResumoAgenda } from "@/lib/consultas/resumo";
 import { ResumoClinica } from "./resumo-clinica";
+import { ProximasConsultas } from "./proximas-consultas";
 
 type Atalho = "hoje" | "7dias" | "30dias" | "3meses" | "personalizado";
 const atalhos: { id: Atalho; nome: string }[] = [
@@ -114,8 +115,7 @@ export function PainelOperacionalPage({ podeVerAgenda = false, aoVerAgenda }: Pa
   return <div className="page-stack dashboard-page">
     <ResumoClinica dados={dados} agenda={agenda} podeVerAgenda={podeVerAgenda} aoVerAgenda={aoVerAgenda}
       periodo={atalho === "7dias" ? "Últimos 7 dias" : atalhos.find(a => a.id === atalho)?.nome ?? "Período selecionado"} />
-    {podeVerAgenda && !agenda && !erroAgenda && <p role="status">Consultando agenda…</p>}
-    {erroAgenda && <p role="alert">{erroAgenda} <button type="button" className="secondary" onClick={() => atualizarAgenda(r => r + 1)}>Tentar consultar agenda novamente</button></p>}
+    {podeVerAgenda && <ProximasConsultas agenda={agenda} erro={erroAgenda} aoVerAgenda={aoVerAgenda} aoTentarNovamente={() => atualizarAgenda(r => r + 1)} />}
     {geral && <section className="kpi-grid" aria-label="Resumo geral">
       {[["Conversas abertas", geral.abertas, "green", "message"], ["Pendentes", geral.pendentes, "red", "clock"],
         ["Atendimento com IA", geral.atendimentoIa, "ia", "spark"], ["Atendimento humano", geral.atendimentoHumano, "orange", "users"]].map(([nome, valor, cor, icone]) =>
