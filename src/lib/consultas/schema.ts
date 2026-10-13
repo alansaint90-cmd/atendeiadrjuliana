@@ -12,7 +12,7 @@ export const pacienteSchema = z.strictObject({
     }, "O atendimento é a partir de 5 anos. Para menores, solicite orientação à equipe."),
   cep: z.string().trim().regex(/^$|^\d{8}$/, "Informe um CEP com oito dígitos ou deixe em branco.").default(""),
   rua: texto("a rua"), numero: texto("o número ou s/n", 20), complemento: z.string().trim().max(100),
-  bairro: texto("o bairro"), cidade: texto("a cidade"), uf: z.enum(["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"], { error: "Informe a sigla do estado." }),
+  bairro: texto("o bairro"), cidade: texto("a cidade"), uf: z.enum(["","AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"], { error: "Estado inválido." }).default(""),
 });
 export type PacienteConsulta = z.infer<typeof pacienteSchema>;
 export const instanciaConsultaSchema = texto("a instância", 100);

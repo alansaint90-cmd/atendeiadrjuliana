@@ -2,9 +2,9 @@ import { pacienteSchema, type PacienteConsulta } from "./schema";
 
 export type CampoPaciente = keyof PacienteConsulta;
 const identificacao = ["nomeCompleto", "nascimento"] as const;
-const endereco = ["rua", "numero", "bairro", "cidade", "uf"] as const;
+const endereco = ["rua", "numero", "bairro", "cidade"] as const;
 export const perguntaIdentificacao = "Qual é o nome completo do paciente? Informe também a data de nascimento, com dia, mês e ano.";
-export const perguntaEndereco = "Qual é o endereço completo do paciente? Informe rua, bairro, número, cidade e UF, e um ponto de referência, se houver.";
+export const perguntaEndereco = "Qual é o endereço completo do paciente? Informe rua, bairro, número, cidade, e um ponto de referência, se houver.";
 export const perguntaLocal = "Você gostaria de agendar uma consulta em Salvador ou em Camaçari?";
 const rotulos: Record<CampoPaciente, string> = { nomeCompleto: "nome completo", nascimento: "data de nascimento (dia/mês/ano)",
   rua: "rua", numero: "número ou s/n", bairro: "bairro", cidade: "cidade do endereço", uf: "UF", complemento: "ponto de referência",

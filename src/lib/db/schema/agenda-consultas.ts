@@ -24,4 +24,4 @@ export const agendaReservas = pgTable("atendeia_agenda_horarios_reservas", {
   uniqueIndex("atendeia_agenda_reserva_vaga").on(t.horarioId).where(sql`${t.is_deleted}=false AND ${t.status}='confirmada'`),
   index("atendeia_agenda_reserva_origem").on(t.origem),
   check("atendeia_agenda_reserva_status", sql`${t.status} IN (${sql.raw(listaSql(STATUS_CONSULTA))})`),
-  check("atendeia_agenda_reserva_cadastro", sql`length(trim(${t.nomeCompleto}))>2 AND (${t.telefone}='' OR ${t.telefone} ~ '^[+][1-9][0-9]{6,14}$') AND (${t.cep}='' OR ${t.cep} ~ '^[0-9]{8}$') AND length(trim(${t.rua}))>0 AND length(trim(${t.numero}))>0 AND length(trim(${t.bairro}))>0 AND length(trim(${t.cidade}))>0 AND ${t.uf} ~ '^[A-Z]{2}$'`)]);
+  check("atendeia_agenda_reserva_cadastro", sql`length(trim(${t.nomeCompleto}))>2 AND (${t.telefone}='' OR ${t.telefone} ~ '^[+][1-9][0-9]{6,14}$') AND (${t.cep}='' OR ${t.cep} ~ '^[0-9]{8}$') AND length(trim(${t.rua}))>0 AND length(trim(${t.numero}))>0 AND length(trim(${t.bairro}))>0 AND length(trim(${t.cidade}))>0 AND (${t.uf}='' OR ${t.uf} ~ '^[A-Z]{2}$')`)]);

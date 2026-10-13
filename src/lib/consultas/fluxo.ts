@@ -4,7 +4,7 @@ import { pacienteSchema, formatarConsulta, type PacienteConsulta, type HorarioCo
 import { horaInformada } from "./intencao";
 import { camposPendentes, perguntaDados, perguntaIdentificacao, perguntaLocal, normalizarCampo, type CampoPaciente } from "./coleta";
 
-const campos = ["nomeCompleto", "telefone", "nascimento", "cep", "rua", "numero", "complemento", "bairro", "cidade", "uf"] as const;
+const campos = ["nomeCompleto", "telefone", "nascimento", "cep", "rua", "numero", "complemento", "bairro", "cidade"] as const;
 const contatoCamacari = "Em Camaçari, a Dra. Juliana atende no Hospital SEMERGE. Para agendar, fale diretamente pelo WhatsApp: (71) 3621-4575.\nhttps://api.whatsapp.com/send?phone=557136214575\nO hospital confirma os horários e as condições da consulta.";
 export interface CadastroConsulta { id: string; etapa: "horario" | "dados" | "local" | "conferencia" | "encerrado"; opcoes: HorarioConsulta[]; local?: "salvador";
   horario?: HorarioConsulta; paciente: Partial<PacienteConsulta>; ultimaMensagem?: string; ultimaResposta?: string }
@@ -28,7 +28,7 @@ export function mensagensDaConsulta(resposta: string): string[] {
 }
 function resumo(d: CadastroConsulta) {
   const p = pacienteSchema.parse(d.paciente);
-  return `Confira os dados antes de agendar.\n\nNome: ${p.nomeCompleto}${p.telefone ? `\nTelefone: ${p.telefone}` : ""}\nData de nascimento: ${p.nascimento.split("-").reverse().join("/")}\nEndereço: ${p.rua}, ${p.numero}${p.complemento ? `, referência/complemento: ${p.complemento}` : ""}, ${p.bairro}, ${p.cidade}/${p.uf}${p.cep ? `, CEP ${p.cep}` : ""}\nData da consulta em Salvador: ${formatarConsulta(d.horario!.inicio)} (horário de Brasília).\n\nOs dados e o horário estão corretos? Confirma pra gente concluir o nosso agendamento? Responda confirmo ou corrigir.`;
+  return `Confira os dados antes de agendar.\n\nNome: ${p.nomeCompleto}${p.telefone ? `\nTelefone: ${p.telefone}` : ""}\nData de nascimento: ${p.nascimento.split("-").reverse().join("/")}\nEndereço: ${p.rua}, ${p.numero}${p.complemento ? `, referência/complemento: ${p.complemento}` : ""}, ${p.bairro}, ${p.cidade}${p.uf ? `/${p.uf}` : ""}${p.cep ? `, CEP ${p.cep}` : ""}\nData da consulta em Salvador: ${formatarConsulta(d.horario!.inicio)} (horário de Brasília).\n\nOs dados e o horário estão corretos? Confirma pra gente concluir o nosso agendamento? Responda confirmo ou corrigir.`;
 }
 export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId: string, texto: string, iniciar = false): Promise<string | null> {
   let d = await porta.ler();

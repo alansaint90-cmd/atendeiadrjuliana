@@ -224,8 +224,8 @@ sessões. Nenhum teste de autenticação usa banco de produção.
 Configurações, integrações e estado do agente são exclusivos do super administrador.
 Agenda de consultas segue ADR-0013: agenda única da Dra. Juliana em Salvador,
 quintas às 8h, 8h40, 9h20, 10h, 10h40 e 11h20 (Brasília), 40 minutos cada.
-Nome completo, nascimento e endereço com rua, número, bairro, cidade e UF são
-obrigatórios; telefone, CEP e complemento/referência são opcionais. Coletar nome
+Nome completo, nascimento e endereço com rua, número, bairro e cidade são
+obrigatórios; telefone, CEP e complemento/referência são opcionais. Estado/UF não é solicitado nem obrigatório. Coletar nome
 e nascimento juntos, depois endereço em um balão e então a unidade. Salvador
 continua na agenda; Camaçari recebe o contato do SEMERGE, sem reserva local.
 Extração aceita somente trechos informados e validados, sem inventar dados.

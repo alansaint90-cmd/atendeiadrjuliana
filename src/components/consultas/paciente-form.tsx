@@ -1,7 +1,7 @@
 "use client";
 import type { PacienteConsulta } from "@/lib/consultas/schema";
 
-export const pacienteVazio: PacienteConsulta = { nomeCompleto: "", telefone: "", nascimento: "", cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "BA" };
+export const pacienteVazio: PacienteConsulta = { nomeCompleto: "", telefone: "", nascimento: "", cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" };
 interface PacienteFormProps { paciente: PacienteConsulta; aoAlterar: (dados: PacienteConsulta) => void; ocupado: boolean }
 export function PacienteForm({ paciente, aoAlterar, ocupado }: PacienteFormProps) {
   const campos: { chave: keyof PacienteConsulta; nome: string; tipo?: string; max: number; dica?: string }[] = [
@@ -11,7 +11,7 @@ export function PacienteForm({ paciente, aoAlterar, ocupado }: PacienteFormProps
     { chave: "cep", nome: "CEP (opcional)", max: 8, dica: "Oito dígitos, sem hífen." },
     { chave: "rua", nome: "Rua ou avenida", max: 150 }, { chave: "numero", nome: "Número", max: 20, dica: "Informe s/n quando não houver número." },
     { chave: "complemento", nome: "Complemento / ponto de referência (opcional)", max: 100 }, { chave: "bairro", nome: "Bairro", max: 150 },
-    { chave: "cidade", nome: "Cidade", max: 150 }, { chave: "uf", nome: "UF", max: 2, dica: "Sigla do estado, por exemplo BA." },
+    { chave: "cidade", nome: "Cidade", max: 150 },
   ];
   return <fieldset disabled={ocupado}><legend>Dados do paciente</legend><div className="feature-filters">
     {campos.map(c => <label key={c.chave}>{c.nome}<input name={c.chave} type={c.tipo ?? "text"} required={!["complemento", "telefone", "cep"].includes(c.chave)}
