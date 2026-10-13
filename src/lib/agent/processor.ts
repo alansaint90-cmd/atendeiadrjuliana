@@ -4,6 +4,7 @@ import { digest } from "./message";
 import { ProviderError, type Turn, type RespostaGerada } from "./providers";
 import { extrairNomeInformado, instrucoesComNome, respostaComNome, personaDoAgente, mesmoNome, removerRotuloDaPersona } from "./nome";
 import { deveConsultarAgenda } from "../consultas/intencao";
+import { mensagensDaConsulta } from "../consultas/fluxo";
 
 export interface DeliveryState { status: "gerando" | "gerada" | "enviando" | "enviada" | "incerta" | "falhou"; attempts: number; reply?: string; partes?: string[]; providerIds?: string[]; transcript?: string; code?: string; configHash?: string; providerId?: string; transferencia?: boolean; consulta?: boolean }
 export interface ProcessingPort {
@@ -92,6 +93,7 @@ export async function processMessage(message: IncomingMessage, config: AgentConf
         reply = config.atendimento.transferNotice.replace(/\[(?:NOME|NOME DO CLIENTE)\]|\{NOME\}/giu, nome?.split(" ")[0] ?? "").trim()
           || "Vou encaminhar seu atendimento para nossa equipe.";
       } else reply = partes ? gerada : removerRotuloDaPersona(respostaComNome(gerada, nome), persona);
+      if (consulta) partes = mensagensDaConsulta(reply);
     }
     catch (error) {
       const code = error instanceof ProviderError ? error.code : "geracao_falhou";

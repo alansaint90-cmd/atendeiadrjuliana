@@ -19,8 +19,14 @@ export interface PortaCadastroConsulta {
   ativo(): Promise<boolean>;
 }
 function menu(opcoes: HorarioConsulta[]) {
-  return opcoes.length ? `A Dra. Juliana atende na Clínica Bonvida somente às quintas-feiras, com inícios entre 8h e 11h20. Consultei a agenda e estes são os próximos horários livres (horário de Brasília):\n${opcoes.map((v, i) => `${i + 1}. ${formatarConsulta(v.inicio)}`).join("\n")}\nQual desses horários você prefere? Responda com o número da opção ou com o horário. A vaga só é reservada após o cadastro completo e a conferência dos dados.`
+  return opcoes.length ? `A Dra. Juliana atende na Clínica Bonvida somente às quintas-feiras, com inícios entre 8h e 11h20. Consultei a agenda e estes são os próximos horários livres (horário de Brasília): 👇\n\n${opcoes.map((v, i) => `${i + 1}. ${formatarConsulta(v.inicio)}`).join("\n")}\n\nQual desses horários você prefere? Responda com o número da opção ou com o horário. A vaga é reservada após o cadastro completo e a conferência dos dados.`
     : "Não encontrei vagas disponíveis. A equipe precisa verificar a agenda; nenhuma consulta foi marcada.";
+}
+export function mensagensDaConsulta(resposta: string): string[] {
+  const partes = resposta.split("\n\n");
+  // Somente o menu administrativo é dividido; dados e confirmações ficam íntegros.
+  return partes.length === 3 && partes[0].endsWith("👇") && /^1\. /u.test(partes[1])
+    && partes[2].startsWith("Qual desses horários você prefere?") ? partes : [resposta];
 }
 function resumo(d: CadastroConsulta) {
   const p = pacienteSchema.parse(d.paciente);

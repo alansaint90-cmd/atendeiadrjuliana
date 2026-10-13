@@ -392,9 +392,9 @@ function analyzeFile(file) {
     findings.push({ level: "error", id: "consulta-confirmacao", file: rel, line: 1,
       msg: "Reservas exigem cadastro completo validado, trava da vaga e auditoria na mesma transação." });
   }
-  if (rel === "src/lib/agent/processor.ts" && !/deveConsultarAgenda\([^\n]+, historico\)/.test(content)) {
+  if (rel === "src/lib/agent/processor.ts" && (!/deveConsultarAgenda\([^\n]+, historico\)/.test(content) || !/if \(consulta\) partes = mensagensDaConsulta\(reply\)/.test(content))) {
     findings.push({ level: "error", id: "consulta-disponibilidade", file: rel, line: 1,
-      msg: "Pedidos diretos de agenda devem consultar disponibilidade antes da resposta do modelo." });
+      msg: "Pedidos diretos consultam a agenda antes da resposta e enviam o menu em partes registradas." });
   }
   if (rel === "src/components/chatbots/page.tsx" && /\b(?:localStorage|loadChatbots|storageKey)\b/.test(content)) {
     findings.push({ level: "error", id: "prompt-legado", file: rel, line: 1,

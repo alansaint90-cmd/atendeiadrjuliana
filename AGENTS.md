@@ -235,6 +235,8 @@ Com a agenda habilitada, pedidos de agendamento ou disponibilidade consultam as
 vagas antes de responder. Oferecer somente quintas livres, sem perguntar por dia
 genérico, pedir permissão para consultar ou pedir espera. Horário com pergunta
 (como “11 e 20 pode ser?”) escolhe a vaga; dúvidas sobre preço seguem no prompt.
+O menu de vagas sai em três mensagens: apresentação com 👇, lista e pergunta de
+escolha com aviso de cadastro. Cada parte registra seu ID e não repete envio incerto.
 Gerente administra a agenda; não registrar dados do paciente nos logs de auditoria.
 Até três números na mesma Evolution usam EVOLUTION_INSTANCE_NAME e as opcionais
 EVOLUTION_SECOND_INSTANCE_NAME e EVOLUTION_THIRD_INSTANCE_NAME. Cada instância usa seu próprio chatbot e prompt para testes A/B. Ao abrir Chatbot IA, vínculos compartilhados são separados com cópia inicial do prompt e auditoria; edições posteriores não afetam os outros números.

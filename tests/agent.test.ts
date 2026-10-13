@@ -60,6 +60,25 @@ function fixture() {
     contactName: () => contactName, nextMessage: () => { state = null; } };
 }
 
+test("menu da agenda envia três mensagens em ordem e não repete entrega incerta", async () => {
+  const partes = ["Consultei a agenda e estes são os horários livres: 👇", "1. 15/10/2026, 08:40\n2. 15/10/2026, 09:20", "Qual desses horários você prefere? Responda com o número da opção ou com o horário. A vaga é reservada após o cadastro completo e a conferência dos dados."];
+  for (const falhar of [false, true]) {
+    const f = fixture(); const enviados: string[] = []; const registrados: string[] = [];
+    f.port.cadastroConsulta = async () => partes.join("\n\n");
+    f.port.send = async (_config, _numero, texto) => {
+      enviados.push(texto);
+      if (falhar && enviados.length === 2) throw new ProviderError("envio_incerto");
+      return `parte-${enviados.length}`;
+    };
+    f.port.registrarParte = async id => { registrados.push(id); };
+    const configuracao = { ...config, agendaConsultas: true };
+    assert.equal(await processMessage(message, configuracao, f.port), falhar ? "incerta" : "enviada");
+    await processMessage(message, configuracao, f.port);
+    assert.deepEqual(enviados, falhar ? partes.slice(0, 2) : partes);
+    assert.deepEqual(registrados, falhar ? ["parte-1"] : ["parte-1", "parte-2", "parte-3"]);
+  }
+});
+
 test("pedido de agendamento consulta vagas antes de gerar promessas ou negar acesso", async () => {
   for (const texto of ["Quero agendar uma consulta", "Tem horário disponível na quinta?", "Quais são os horários livres?"]) {
     const f = fixture(); const chamadas: boolean[] = [];

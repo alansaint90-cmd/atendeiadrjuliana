@@ -8,7 +8,7 @@ import { systemUserId } from "../src/lib/db/bootstrap";
 import { consultarHorarios, reservarConsulta, cancelarConsulta, listarConsultas } from "../src/lib/consultas/repository";
 import { horariosDoDia, proximasQuintas } from "../src/lib/consultas/calendario";
 import { pacienteSchema, type PacienteConsulta } from "../src/lib/consultas/schema";
-import { conduzirCadastro, type CadastroConsulta, type PortaCadastroConsulta } from "../src/lib/consultas/fluxo";
+import { conduzirCadastro, mensagensDaConsulta, type CadastroConsulta, type PortaCadastroConsulta } from "../src/lib/consultas/fluxo";
 import { ErroDeNegocio } from "../src/lib/acao";
 
 const paciente: PacienteConsulta = { nomeCompleto: "Paciente Exemplo", telefone: "+5571999999999", nascimento: "1990-02-20", cep: "41810011",
@@ -24,6 +24,12 @@ test("oferece somente vagas de quinta e entende horário com pergunta sem sair d
       vagas: async () => vagas, reservar: async () => { throw new Error("Não pode reservar sem cadastro"); } };
     const menu = await conduzirCadastro(porta, "inicio", "Quero agendar", true);
     assert.match(menu!, /quintas-feiras/);
+    const mensagens = mensagensDaConsulta(menu!);
+    assert.equal(mensagens.length, 3);
+    assert.match(mensagens[0], /👇$/u);
+    assert.match(mensagens[1], /^1\. /u);
+    assert.doesNotMatch(mensagens[1], /Qual desses/);
+    assert.match(mensagens[2], /^Qual desses horários você prefere\?/u);
     assert.doesNotMatch(menu!, /informe outra data|dia específico|aguarde/i);
     assert.equal(await conduzirCadastro(porta, "preco", "Quanto custa?"), null);
     assert.match((await conduzirCadastro(porta, "escolha", escolha))!, /nome completo/);
