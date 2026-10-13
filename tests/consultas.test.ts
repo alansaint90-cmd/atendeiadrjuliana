@@ -22,7 +22,7 @@ test("oferece somente vagas de quinta e entende horário com pergunta sem sair d
     const vagas = horariosDoDia(dia()).map(p => ({ id: randomUUID(), ...p, atualizadoEm: new Date().toISOString(), disponivel: true }));
     const porta: PortaCadastroConsulta = { ativo: async () => true, ler: async () => estado, salvar: async d => { estado = d; },
       vagas: async () => vagas, reservar: async () => { throw new Error("Não pode reservar sem cadastro"); } };
-    const menu = await conduzirCadastro(porta, "inicio", "Quero agendar", true);
+    const menu = await conduzirCadastro(porta, "inicio", "Quais horários livres?", true);
     assert.match(menu!, /quintas-feiras/);
     const mensagens = mensagensDaConsulta(menu!);
     assert.equal(mensagens.length, 3);
@@ -46,12 +46,14 @@ test("agenda gera seis horários de quinta, incluindo consulta que começa às 1
   assert.deepEqual(horariosDoDia("2026-10-15", Date.parse("2026-10-15T18:00:00Z")), [], "quinta à tarde segue para a próxima semana");
 });
 test("cadastro exige todos os dados e não aceita data impossível, futura ou CEP incompleto", () => {
-  for (const campo of ["nomeCompleto","telefone","nascimento","cep","rua","numero","bairro","cidade","uf"] as const) {
+  for (const campo of ["nomeCompleto","nascimento","rua","numero","bairro","cidade","uf"] as const) {
     assert.equal(pacienteSchema.safeParse({ ...paciente, [campo]: "" }).success, false, campo);
   }
   for (const nascimento of ["2026-02-30", "2999-01-01"]) assert.equal(pacienteSchema.safeParse({ ...paciente, nascimento }).success, false);
   assert.equal(pacienteSchema.safeParse({ ...paciente, nomeCompleto: "Nome" }).success, false);
   assert.equal(pacienteSchema.safeParse({ ...paciente, cep: "123" }).success, false);
+  assert.equal(pacienteSchema.safeParse({ ...paciente, telefone: "", cep: "" }).success, true);
+  assert.equal(pacienteSchema.parse({ ...paciente, telefone: undefined, cep: undefined }).telefone, "");
 });
 test("reserva persiste paciente, bloqueia duplicidade entre chips, audita e cancela com trava", async () => {
   const cliente = new PGlite(); const banco = drizzle(cliente);
@@ -60,7 +62,7 @@ test("reserva persiste paciente, bloqueia duplicidade entre chips, audita e canc
     const vagas = await consultarHorarios(banco, dia()); assert.equal(vagas.length, 6);
     assert.equal((await consultarHorarios(banco, dia())).length, 6);
     const pedido = { horarioId: vagas[0].id, paciente, dadosConferidos: true };
-    for (const campo of ["cep", "telefone", "nomeCompleto", "nascimento", "rua", "bairro"] as const) {
+    for (const campo of ["nomeCompleto", "nascimento", "rua", "bairro"] as const) {
       await assert.rejects(reservarConsulta(banco, { ...pedido, paciente: { ...paciente, [campo]: "" } }, contexto()));
     }
     await assert.rejects(reservarConsulta(banco, { ...pedido, dadosConferidos: false }, contexto()));
@@ -81,6 +83,8 @@ test("reserva persiste paciente, bloqueia duplicidade entre chips, audita e canc
     assert.equal((await listarConsultas(banco, dia()))[0].status, "cancelada");
     await reservarConsulta(banco, pedido, contexto());
     assert.equal((await listarConsultas(banco, dia())).length, 3);
+    const semOpcionais = await reservarConsulta(banco, { ...pedido, horarioId: vagas[5].id, paciente: { ...paciente, telefone: "", cep: "" } }, contexto());
+    assert.equal(semOpcionais.telefone, ""); assert.equal(semOpcionais.cep, "");
   } finally { await cliente.close(); }
 });
 test("WhatsApp coleta além do histórico curto e só reserva após conferência explícita", async () => {
@@ -88,15 +92,21 @@ test("WhatsApp coleta além do histórico curto e só reserva após conferência
   const periodo = horariosDoDia(dia())[0];
   const vaga = { id: randomUUID(), ...periodo, atualizadoEm: new Date().toISOString(), disponivel: true };
   const porta: PortaCadastroConsulta = { ler: async () => estado, salvar: async d => { estado = structuredClone(d); }, ativo: async () => ativo,
+    extrair: async texto => texto === "identificação" ? { nomeCompleto: paciente.nomeCompleto, nascimento: "20/02/1990" }
+      : { rua: paciente.rua, numero: paciente.numero, bairro: paciente.bairro, cidade: paciente.cidade, uf: "ba", complemento: "perto da praça" },
     vagas: async () => [vaga], reservar: async (dados, identidade) => { reservas++; assert.equal(dados.dadosConferidos, true);
+      assert.equal(dados.paciente.telefone, ""); assert.equal(dados.paciente.cep, "");
       return { ...dados.paciente, id: identidade, horarioId: vaga.id, instancia: "teste", ...periodo, atualizadoEm: new Date().toISOString(), status: "confirmada" }; } };
-  assert.match((await conduzirCadastro(porta, "inicio", "Quero agendar", true))!, /horários livres/);
-  assert.match((await conduzirCadastro(porta, "opcao", "1"))!, /nome completo/);
-  const entradas = ["Paciente Exemplo", "71999999999", "20/02/1990", "41810-011", "Rua de Teste", "10", "sem complemento", "Bairro Teste", "Salvador", "BA"];
+  assert.match((await conduzirCadastro(porta, "inicio", "Quero agendar", true))!, /nome completo.*nascimento/);
+  const entradas = ["identificação", "endereço", "Salvador", "1"];
   for (let i = 0; i < entradas.length; i++) {
     const resposta = await conduzirCadastro(porta, `dado-${i}`, entradas[i]);
     assert.equal(await conduzirCadastro(porta, `dado-${i}`, entradas[i]), resposta, "evento repetido não avança campo");
     assert.equal(reservas, 0);
+    if (i === 0) assert.match(resposta!, /endereço completo/);
+    if (i === 1) assert.match(resposta!, /Salvador ou em Camaçari/);
+    if (i === 2) assert.match(resposta!, /horários livres/);
+    if (i === 3) { assert.match(resposta!, /Confira os dados/); assert.doesNotMatch(resposta!, /Telefone:|CEP/); }
   }
   assert.match((await conduzirCadastro(porta, "duvida", "já agendou?")) ?? "fora do cadastro", /fora do cadastro/);
   ativo = false; await assert.rejects(conduzirCadastro(porta, "pausa", "confirmo")); assert.equal(reservas, 0);

@@ -16,7 +16,7 @@ export async function generateReply(config: AgentConfig, history: Turn[], text: 
   const parametrosVazios = { type: "object", properties: {}, required: [], additionalProperties: false };
   const ferramentas = [
     ...(config.atendimento?.transferHuman ? [{ type: "function", name: "transferir_para_humano", description: "Acione quando o cliente solicitar ou aceitar atendimento de uma pessoa. Não acione para uma pergunta sobre o nome do assistente.", parameters: parametrosVazios, strict: true }] : []),
-    ...(config.agendaConsultas ? [{ type: "function", name: "iniciar_agendamento_consulta", description: "Inicie o cadastro quando o paciente pedir para marcar uma nova consulta em Salvador. O servidor consulta vagas reais, coleta nome completo, telefone, nascimento e endereço e pede conferência antes de reservar. Não acione para Camaçari, urgência, remarcação ou cancelamento. Nunca confirme uma consulta por texto livre.", parameters: parametrosVazios, strict: true }] : []),
+    ...(config.agendaConsultas ? [{ type: "function", name: "iniciar_agendamento_consulta", description: "Inicie o cadastro quando o paciente pedir para marcar uma nova consulta, inclusive antes de escolher a unidade. O servidor coleta nome e nascimento juntos, depois endereço, pergunta a unidade e consulta vagas reais de Salvador. Telefone e CEP são opcionais. Exige conferência antes de reservar. Não acione para Camaçari, urgência, remarcação ou cancelamento. Nunca confirme uma consulta por texto livre.", parameters: parametrosVazios, strict: true }] : []),
   ];
   try {
     response = await request("https://api.openai.com/v1/responses", {

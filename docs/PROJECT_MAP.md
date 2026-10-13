@@ -6,7 +6,7 @@
 
 | Metrica | Total |
 |---------|-------|
-| Arquivos TS/TSX | 150 |
+| Arquivos TS/TSX | 152 |
 | Tabelas (Drizzle) | 33 |
 | Server Actions (arquivos) | 12 |
 | Rotas de API | 6 |
@@ -126,6 +126,8 @@ lib/
     server-repository.ts
   consultas/
     calendario.ts
+    coleta.ts
+    extracao.ts
     fluxo-servidor.ts
     fluxo.ts
     intencao.ts

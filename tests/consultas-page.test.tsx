@@ -15,8 +15,10 @@ test("consulta exige cadastro completo, conferência e confirmação bloqueada p
   expect(carregarAgendaConsultas).toHaveBeenCalledOnce();
   fireEvent.click(screen.getByRole("button", { name: /Livre/ }));
   expect(screen.getByRole("button", { name: "Confirmar consulta" })).toBeDisabled();
-  const valores = { "Nome completo do paciente": "Paciente Exemplo", "Telefone para contato": "+5571999999999", "Data de nascimento": "1990-02-20",
-    "CEP": "41810011", "Rua ou avenida": "Rua Teste", "Número": "10", "Bairro": "Bairro Teste", "Cidade": "Salvador", "UF": "BA" };
+  expect(screen.getByLabelText(/Telefone para contato/)).not.toBeRequired();
+  expect(screen.getByLabelText(/CEP/)).not.toBeRequired();
+  const valores = { "Nome completo do paciente": "Paciente Exemplo", "Data de nascimento": "1990-02-20",
+    "Rua ou avenida": "Rua Teste", "Número": "10", "Bairro": "Bairro Teste", "Cidade": "Salvador", "UF": "BA" };
   for (const [nome, value] of Object.entries(valores)) fireEvent.change(screen.getByLabelText(nome, { exact: false }), { target: { value } });
   fireEvent.click(screen.getByLabelText("Conferi os dados do paciente e o horário."));
   fireEvent.click(screen.getByRole("button", { name: "Confirmar consulta" }));

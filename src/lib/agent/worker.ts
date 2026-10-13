@@ -81,7 +81,7 @@ export async function runAgentTick(substituicoes: Partial<typeof dependenciasPad
         };
         result = await pausaManualAtiva(client, message.conversation) ? "pausa_manual" : await processMessage(message, config.data, {
           ...store, generate: dependencies.generate, send: dependencies.send, transcribe: transcribeAudio,
-          cadastroConsulta: cadastroDaConversa(client, token, message, instancia, atendimentoAtivo),
+          cadastroConsulta: cadastroDaConversa(client, token, message, instancia, atendimentoAtivo, config.data),
           registrarParte: async id => {
             await followups.outgoing(instancia, id);
             await dependencies.registrarEnvio(instancia, id);

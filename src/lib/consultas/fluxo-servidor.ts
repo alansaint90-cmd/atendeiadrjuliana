@@ -7,11 +7,14 @@ import { conduzirCadastro, type CadastroConsulta } from "./fluxo";
 import { consultarHorarios, reservarConsulta } from "./repository";
 import { proximasQuintas } from "./calendario";
 import type { HorarioConsulta } from "./schema";
+import type { AgentConfig } from "../agent/config";
+import { extrairCamposCadastro } from "./extracao";
 
-export function cadastroDaConversa(client: Redis, token: string, mensagem: IncomingMessage, instancia: string, ativo: () => Promise<boolean>) {
+export function cadastroDaConversa(client: Redis, token: string, mensagem: IncomingMessage, instancia: string, ativo: () => Promise<boolean>, config: AgentConfig) {
   const chave = `atendeia:{evolution}:cadastro-consulta:${mensagem.conversation}`;
   return (texto: string, iniciar: boolean) => conduzirCadastro({
     ativo,
+    extrair: (texto, campos) => extrairCamposCadastro(config, texto, campos),
     ler: async () => { const valor = await client.get(chave); return valor ? JSON.parse(valor) as CadastroConsulta : null; },
     salvar: async dados => {
       await assertResult(await client.eval(owned + "redis.call('SET', KEYS[2], ARGV[2], 'EX', 86400); return 1",

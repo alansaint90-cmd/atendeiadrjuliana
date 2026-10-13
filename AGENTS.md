@@ -224,15 +224,20 @@ sessões. Nenhum teste de autenticação usa banco de produção.
 Configurações, integrações e estado do agente são exclusivos do super administrador.
 Agenda de consultas segue ADR-0013: agenda única da Dra. Juliana em Salvador,
 quintas às 8h, 8h40, 9h20, 10h, 10h40 e 11h20 (Brasília), 40 minutos cada.
-Nome completo, telefone, nascimento e endereço com CEP, rua, número, bairro,
-cidade e UF são obrigatórios; complemento é opcional. Conferir os dados antes
+Nome completo, nascimento e endereço com rua, número, bairro, cidade e UF são
+obrigatórios; telefone, CEP e complemento/referência são opcionais. Coletar nome
+e nascimento juntos, depois endereço em um balão e então a unidade. Salvador
+continua na agenda; Camaçari recebe o contato do SEMERGE, sem reserva local.
+Extração aceita somente trechos informados e validados, sem inventar dados.
+Conferir os dados antes
 da reserva. Só confirmar após gravar a reserva e auditoria na mesma transação.
 Trava da vaga e índice único impedem duplicidade mesmo entre chips. Cadastro
 temporário no Redis é isolado por conversa/instância, expira em 24h e não usa
 somente o histórico curto. Entrega incerta da confirmação não repete o envio.
 O agente só inicia a coleta quando agendaConsultas estiver habilitado no chatbot.
-Com a agenda habilitada, pedidos de agendamento ou disponibilidade consultam as
-vagas antes de responder. Oferecer somente quintas livres, sem perguntar por dia
+Com a agenda habilitada, pedidos explícitos de disponibilidade consultam as
+vagas antes de responder; novos cadastros seguem a coleta agrupada e a unidade.
+Oferecer somente quintas livres, sem perguntar por dia
 genérico, pedir permissão para consultar ou pedir espera. Horário com pergunta
 (como “11 e 20 pode ser?”) escolhe a vaga; dúvidas sobre preço seguem no prompt.
 O menu de vagas sai em três mensagens: apresentação com 👇, lista e pergunta de

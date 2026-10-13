@@ -16,10 +16,15 @@ Não há promessa de entrega exatamente uma vez entre PostgreSQL, Redis e WhatsA
 
 Pedidos diretos de agenda e respostas de escolha consultam o fluxo no servidor
 antes de chamar o modelo. A ferramenta cobre outras formulações reconhecidas pela
-IA. A primeira resposta já apresenta vagas reais de quinta, sem pedido de espera.
+IA. Pedidos explícitos de disponibilidade apresentam vagas reais, sem espera.
+Novos cadastros agrupam nome e nascimento, depois endereço e escolha da unidade.
+Telefone e CEP são opcionais, inclusive no CHECK do banco (migração 0012).
+Uma chamada estruturada ao provedor extrai trechos literais da mensagem atual;
+valores ausentes ou inventados são recusados antes da validação de cada campo.
+Não envia o histórico ou o cadastro armazenado para essa extração.
 A coleta e a confirmação são conduzidas pelo servidor,
 com validação por campo e conferência explícita do paciente. O cadastro temporário
-fica no Redis por 24h; o histórico de 12 falas não é suficiente para dez campos.
+fica no Redis por 24h, independente do histórico curto.
 Não se deduz endereço por CEP nem se usa nome de exibição como nome do paciente.
 Dados incompletos não chegam ao repositório de reservas. Mensagens de confirmação
 só são produzidas após o commit; o diário existente não repete entrega incerta.

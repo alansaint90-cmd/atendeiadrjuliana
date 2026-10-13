@@ -388,6 +388,10 @@ function analyzeFile(file) {
     findings.push({ level: "error", id: "prompt-legado", file: rel, line: 1,
       msg: "O modelo inicial do chatbot não pode trazer um roteiro comercial embutido." });
   }
+  if (rel === "src/lib/consultas/fluxo.ts" && (!/camposPendentes/.test(content) || !/perguntaLocal/.test(content) || !/porta.extrair/.test(content))) {
+    findings.push({ level: "error", id: "consulta-coleta", file: rel, line: 1,
+      msg: "Coleta agrupada exige validação de campos pendentes e escolha da unidade antes da reserva." });
+  }
   if (rel === "src/lib/consultas/repository.ts" && (!/reservaConsultaSchema.parse/.test(content) || !/FOR UPDATE/.test(content) || !/await auditar\(tx, id, "consulta_confirmada"/.test(content))) {
     findings.push({ level: "error", id: "consulta-confirmacao", file: rel, line: 1,
       msg: "Reservas exigem cadastro completo validado, trava da vaga e auditoria na mesma transação." });
