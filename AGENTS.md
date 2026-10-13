@@ -243,7 +243,9 @@ genérico, pedir permissão para consultar ou pedir espera. Horário com pergunt
 O menu de vagas sai em três mensagens: apresentação com 👇, lista e pergunta de
 escolha com aviso de cadastro. Cada parte registra seu ID e não repete envio incerto.
 A conferência também sai em três mensagens: convite para conferir, dados e horário,
-pedido de confirmação. A confirmação final sai em um balão após gravar a reserva.
+pedido de confirmação. Após gravar a reserva, a confirmação final informa dia,
+horário de Brasília, nome e protocolo em linhas separadas; outro balão pede chegada
+20 minutos antes para cadastro presencial. Cada parte usa o diário de entrega.
 Gerente administra a agenda; não registrar dados do paciente nos logs de auditoria.
 Até três números na mesma Evolution usam EVOLUTION_INSTANCE_NAME e as opcionais
 EVOLUTION_SECOND_INSTANCE_NAME e EVOLUTION_THIRD_INSTANCE_NAME. Cada instância usa seu próprio chatbot e prompt para testes A/B. Ao abrir Chatbot IA, vínculos compartilhados são separados com cópia inicial do prompt e auditoria; edições posteriores não afetam os outros números.

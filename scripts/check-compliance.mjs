@@ -392,7 +392,7 @@ function analyzeFile(file) {
     findings.push({ level: "error", id: "consulta-uf", file: rel, line: 1,
       msg: "O cadastro não deve solicitar estado/UF como dado pendente." });
   }
-  if (rel === "src/lib/consultas/fluxo.ts" && (!/camposPendentes/.test(content) || !/perguntaLocal/.test(content) || !/porta.extrair/.test(content) || !/menuDeVagas \|\| conferencia/.test(content))) {
+  if (rel === "src/lib/consultas/fluxo.ts" && (!/camposPendentes/.test(content) || !/perguntaLocal/.test(content) || !/porta.extrair/.test(content) || !/menuDeVagas \|\| conferencia/.test(content) || !/partes\[1\] === avisoChegada/.test(content))) {
     findings.push({ level: "error", id: "consulta-coleta", file: rel, line: 1,
       msg: "Coleta exige campos pendentes, escolha de unidade e divisão do menu e da conferência em mensagens." });
   }

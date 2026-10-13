@@ -121,9 +121,10 @@ test("WhatsApp coleta além do histórico curto e só reserva após conferência
   ativo = false; await assert.rejects(conduzirCadastro(porta, "pausa", "confirmo")); assert.equal(reservas, 0);
   ativo = true;
   const confirmacao = (await conduzirCadastro(porta, "confirmacao", "confirmo"))!;
-  assert.match(confirmacao, /Consulta confirmada.*horário de Brasília.*em nome de Paciente Exemplo.*Protocolo:/);
+  assert.match(confirmacao, /^Consulta confirmada:\nDia: \d{2}\/\d{2}\/\d{4}\nHorário: 08:00 \(horário de Brasília\)\nNome do paciente: Paciente Exemplo\nProtocolo:/);
   assert.match(confirmacao, /O seu cadastro foi registrado em nosso sistema\./);
-  assert.equal(mensagensDaConsulta(confirmacao).length, 1);
+  assert.equal(mensagensDaConsulta(confirmacao).length, 2);
+  assert.equal(mensagensDaConsulta(confirmacao)[1], "Chegue 20 minutos antes para fazer o cadastro presencial e agilizar seu atendimento.");
   await conduzirCadastro(porta, "confirmacao", "confirmo"); assert.equal(reservas, 1);
 });
 test("vaga ocupada durante o cadastro oferece próxima vaga e exige nova concordância", async () => {

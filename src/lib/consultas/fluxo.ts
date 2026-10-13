@@ -5,6 +5,7 @@ import { horaInformada } from "./intencao";
 import { camposPendentes, perguntaDados, perguntaIdentificacao, perguntaLocal, normalizarCampo, type CampoPaciente } from "./coleta";
 
 const campos = ["nomeCompleto", "telefone", "nascimento", "cep", "rua", "numero", "complemento", "bairro", "cidade"] as const;
+const avisoChegada = "Chegue 20 minutos antes para fazer o cadastro presencial e agilizar seu atendimento.";
 const contatoCamacari = "Em Camaçari, a Dra. Juliana atende no Hospital SEMERGE. Para agendar, fale diretamente pelo WhatsApp: (71) 3621-4575.\nhttps://api.whatsapp.com/send?phone=557136214575\nO hospital confirma os horários e as condições da consulta.";
 export interface CadastroConsulta { id: string; etapa: "horario" | "dados" | "local" | "conferencia" | "encerrado"; opcoes: HorarioConsulta[]; local?: "salvador";
   horario?: HorarioConsulta; paciente: Partial<PacienteConsulta>; ultimaMensagem?: string; ultimaResposta?: string }
@@ -20,6 +21,7 @@ function menu(opcoes: HorarioConsulta[]) {
 }
 export function mensagensDaConsulta(resposta: string): string[] {
   const partes = resposta.split("\n\n");
+  if (partes.length === 2 && partes[0].startsWith("Consulta confirmada:\nDia: ") && partes[1] === avisoChegada) return partes;
   const menuDeVagas = partes[0].endsWith("👇") && /^1\. /u.test(partes[1] ?? "")
     && partes[2]?.startsWith("Qual desses horários você prefere?");
   const conferencia = partes[0] === "Confira os dados antes de agendar."
@@ -93,7 +95,10 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
       if (!await porta.ativo()) throw new Error("Cadastro pausado.");
       const reserva = await porta.reservar({ horarioId: d.horario!.id, paciente, dadosConferidos: true }, d.id);
       d.etapa = "encerrado"; d.paciente = {};
-      return responder(`Consulta confirmada para ${formatarConsulta(reserva.inicio)} (horário de Brasília), em nome de ${reserva.nomeCompleto}. Protocolo: ${reserva.id}.\nO seu cadastro foi registrado em nosso sistema.`);
+      const inicio = new Date(reserva.inicio);
+      const dia = inicio.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+      const horario = inicio.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+      return responder(`Consulta confirmada:\nDia: ${dia}\nHorário: ${horario} (horário de Brasília)\nNome do paciente: ${reserva.nomeCompleto}\nProtocolo: ${reserva.id}\nO seu cadastro foi registrado em nosso sistema.\n\n${avisoChegada}`);
     } catch (erro) {
       if (!(erro instanceof ErroDeNegocio)) throw erro;
       d.opcoes = (await porta.vagas(d.horario!.inicio.slice(0, 10), d.horario!.inicio)).filter(v => v.disponivel).slice(0, 6); d.etapa = d.opcoes.length ? "horario" : "encerrado";
