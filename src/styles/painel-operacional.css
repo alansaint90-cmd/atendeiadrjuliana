@@ -59,7 +59,7 @@
   .dashboard-atalhos button { flex: 1 1 auto; }
   .dashboard-personalizado label { flex: 1 1 135px; }
 }
-.clinica-colunas { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr); gap: 24px; align-items: start; }
+.clinica-colunas { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
 .clinica-colunas .panel-title p, .clinica-colunas .panel > p { color: var(--muted); font-size: 13px; line-height: 1.7; }
 .clinica-paciente { display: flex; align-items: center; gap: 12px; }
 .clinica-paciente > div { display: grid; gap: 4px; }

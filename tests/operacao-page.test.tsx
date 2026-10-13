@@ -47,7 +47,7 @@ test("SDR não solicita dados da agenda e falha não simula vagas vazias", async
   expect(resumo.getAllByText("—")).toHaveLength(2);
 });
 
-test("dashboard autorizado sem dados mostra zeros reais e permite trocar o período", async () => {
+test("dashboard usa os últimos sete dias e omite os blocos removidos", async () => {
   vi.mocked(carregarPainel).mockResolvedValue({ ok: true, dados: painelVazio });
   render(<OperacaoPage rota="dashboard" />);
   expect(await screen.findByText("Nenhum contato com atividade no período.")).toBeInTheDocument();
@@ -55,9 +55,11 @@ test("dashboard autorizado sem dados mostra zeros reais e permite trocar o perí
   expect(screen.getAllByText("Atendimento com IA").length).toBeGreaterThan(0);
   expect(screen.getAllByText("Atendimento humano").length).toBeGreaterThan(0);
   expect(screen.queryByText("Leads qualificados")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Hoje" }));
-  expect(await screen.findByText("Nenhum contato com atividade no período.")).toBeInTheDocument();
-  expect(carregarPainel).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole("region", { name: "Resumo geral" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Resumo do período" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Filtros do painel" })).not.toBeInTheDocument();
+  expect(screen.queryByText("Uma manhã bem organizada")).not.toBeInTheDocument();
+  expect(carregarPainel).toHaveBeenCalledWith(expect.objectContaining({ canalId: null }));
 });
 
 test("falha de consulta não vira banco vazio e sessão recusada remove dados anteriores", async () => {

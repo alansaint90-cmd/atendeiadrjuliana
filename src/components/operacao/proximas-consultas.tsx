@@ -1,5 +1,4 @@
 import type { ResumoAgenda } from "@/lib/consultas/resumo";
-import { icon } from "@/lib/demo/icons";
 
 interface ProximasConsultasProps {
   agenda: ResumoAgenda | null;
@@ -25,8 +24,5 @@ export function ProximasConsultas({ agenda, erro, demonstracao = false, aoTentar
         </tbody></table></div>}
       <button type="button" className="secondary clinica-ver-agenda" onClick={aoVerAgenda}>Ver todos os horários</button>
     </section>
-    <aside className="page-stack"><section className="panel"><span className="clinica-icone" aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon("spark") }} /><h2>Ayala, sua assistente</h2><p>Recepção e agendamento em uma conversa mais simples.</p>
-      <div className="clinica-passos"><span>01 <strong>Acolher o paciente</strong></span><span>02 <strong>Consultar horários livres</strong></span><span>03 <strong>Conferir e confirmar os dados</strong></span></div><small>Ilustração do fluxo de atendimento</small>
-    </section><section className="panel"><h2>Uma manhã bem organizada</h2><p>Atendimento às quintas-feiras, com seis horários entre 8h e 11h20.</p><span className="badge blue">Consultas de 40 minutos</span></section></aside>
   </div>;
 }

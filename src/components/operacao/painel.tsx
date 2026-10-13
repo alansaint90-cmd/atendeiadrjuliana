@@ -3,28 +3,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { carregarPainel } from "@/lib/actions/painel";
 import type { FiltroPainel, PainelOperacional, PontoPainel } from "@/lib/operacao/painel";
-import { icon } from "@/lib/demo/icons";
 import { carregarResumoAgenda } from "@/lib/actions/consultas";
 import type { ResumoAgenda } from "@/lib/consultas/resumo";
 import { ResumoClinica } from "./resumo-clinica";
 import { ProximasConsultas } from "./proximas-consultas";
 
-type Atalho = "hoje" | "7dias" | "30dias" | "3meses" | "personalizado";
-const atalhos: { id: Atalho; nome: string }[] = [
-  { id: "hoje", nome: "Hoje" }, { id: "7dias", nome: "7 dias" }, { id: "30dias", nome: "30 dias" },
-  { id: "3meses", nome: "3 meses" }, { id: "personalizado", nome: "Intervalo personalizado" },
-];
-function diaLocal(data: Date) {
-  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}-${String(data.getDate()).padStart(2, "0")}`;
-}
-function filtroAtalho(atalho: Exclude<Atalho, "personalizado">, canalId: string | null): FiltroPainel {
+function filtroUltimosSeteDias(): FiltroPainel {
   const agora = new Date();
   const fim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1);
   const inicio = new Date(fim);
-  if (atalho === "3meses") inicio.setMonth(inicio.getMonth() - 3);
-  else inicio.setDate(inicio.getDate() - (atalho === "hoje" ? 1 : atalho === "7dias" ? 7 : 30));
+  inicio.setDate(inicio.getDate() - 7);
   return { inicio: inicio.toISOString(), fim: fim.toISOString(),
-    fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", canalId };
+    fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", canalId: null };
 }
 function rotuloDia(dia: string) { return dia.slice(8, 10) + "/" + dia.slice(5, 7); }
 
@@ -77,17 +67,10 @@ export function PainelOperacionalPage({ podeVerAgenda = false, aoVerAgenda }: Pa
     return () => { ativo = false; clearTimeout(timer); };
   }, [podeVerAgenda, revisaoAgenda]);
   const [dados, definirDados] = useState<PainelOperacional | null>(null);
-  const [geral, definirGeral] = useState<Pick<PainelOperacional, "abertas" | "pendentes" | "atendimentoIa" | "atendimentoHumano"> | null>(null);
-  const [canais, definirCanais] = useState<PainelOperacional["canais"]>([]);
   const [ocupado, definirOcupado] = useState(true);
   const [erro, definirErro] = useState("");
-  const [atalho, definirAtalho] = useState<Atalho>("7dias");
-  const [canalId, definirCanal] = useState<string | null>(null);
-  const [personalizado, definirPersonalizado] = useState<FiltroPainel | null>(null);
-  const [inicioManual, definirInicioManual] = useState("");
-  const [fimManual, definirFimManual] = useState("");
   const requisicao = useRef(0);
-  const filtro = useMemo(() => atalho === "personalizado" ? personalizado && { ...personalizado, canalId } : filtroAtalho(atalho, canalId), [atalho, canalId, personalizado]);
+  const filtro = useMemo(() => filtroUltimosSeteDias(), []);
   const carregar = useCallback(async (selecionado: FiltroPainel) => {
     const atual = ++requisicao.current;
     definirOcupado(true); definirErro(""); definirDados(null);
@@ -96,55 +79,20 @@ export function PainelOperacionalPage({ podeVerAgenda = false, aoVerAgenda }: Pa
       if (atual !== requisicao.current) return;
       if (resultado.ok) {
         definirDados(resultado.dados);
-        definirGeral(resultado.dados);
-        definirCanais(resultado.dados.canais);
       }
       else definirErro(resultado.erro);
     } catch { if (atual === requisicao.current) definirErro("Não foi possível consultar o servidor. Tente novamente."); }
     finally { if (atual === requisicao.current) definirOcupado(false); }
   }, []);
   useEffect(() => { if (!filtro) return; const timer = window.setTimeout(() => void carregar(filtro), 0); return () => window.clearTimeout(timer); }, [filtro, carregar]);
-  function aplicarPersonalizado() {
-    if (!inicioManual || !fimManual || inicioManual > fimManual) { definirErro("Escolha datas válidas, com início anterior ao fim."); return; }
-    const inicio = new Date(`${inicioManual}T00:00:00`), fim = new Date(`${fimManual}T00:00:00`);
-    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) { definirErro("Escolha datas válidas."); return; }
-    fim.setDate(fim.getDate() + 1);
-    definirPersonalizado({ inicio: inicio.toISOString(), fim: fim.toISOString(),
-      fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", canalId });
-  }
   return <div className="page-stack dashboard-page">
     <ResumoClinica dados={dados} agenda={agenda} podeVerAgenda={podeVerAgenda} aoVerAgenda={aoVerAgenda}
-      periodo={atalho === "7dias" ? "Últimos 7 dias" : atalhos.find(a => a.id === atalho)?.nome ?? "Período selecionado"} />
+      periodo="Últimos 7 dias" />
     {podeVerAgenda && <ProximasConsultas agenda={agenda} erro={erroAgenda} aoVerAgenda={aoVerAgenda} aoTentarNovamente={() => atualizarAgenda(r => r + 1)} />}
-    {geral && <section className="kpi-grid" aria-label="Resumo geral">
-      {[["Conversas abertas", geral.abertas, "green", "message"], ["Pendentes", geral.pendentes, "red", "clock"],
-        ["Atendimento com IA", geral.atendimentoIa, "ia", "spark"], ["Atendimento humano", geral.atendimentoHumano, "orange", "users"]].map(([nome, valor, cor, icone]) =>
-        <article className={`kpi ${cor}`} key={nome}><span className="dashboard-kpi-icone" dangerouslySetInnerHTML={{ __html: icon(String(icone)) }} aria-hidden="true" /><strong>{valor}</strong><span>{nome}</span></article>)}
-    </section>}
-    <section className="dashboard-filtros" aria-label="Filtros do painel">
-      <label>Canal<select value={canalId ?? ""} onChange={evento => definirCanal(evento.target.value || null)}>
-        <option value="">Todos os canais</option>{canais.map(canal => <option key={canal.id} value={canal.id}>{canal.nome}</option>)}
-      </select></label>
-      <div className="dashboard-atalhos" role="group" aria-label="Período">
-        {atalhos.map(item => <button key={item.id} type="button" className={atalho === item.id ? "ativo" : ""} aria-pressed={atalho === item.id}
-          onClick={() => { definirAtalho(item.id); definirErro(""); if (item.id === "personalizado") { definirPersonalizado(null); definirDados(null); } }}>{item.nome}</button>)}
-      </div>
-      {atalho === "personalizado" && <div className="dashboard-personalizado">
-        <label>De<input type="date" value={inicioManual} max={diaLocal(new Date())} onChange={evento => definirInicioManual(evento.target.value)} /></label>
-        <label>Até<input type="date" value={fimManual} max={diaLocal(new Date())} onChange={evento => definirFimManual(evento.target.value)} /></label>
-        <button type="button" onClick={aplicarPersonalizado}>Aplicar</button>
-      </div>}
-    </section>
     {ocupado && <p role="status">Consultando indicadores…</p>}
     {erro && <p role="alert">{erro} <button type="button" onClick={() => filtro && void carregar(filtro)}>Tentar novamente</button></p>}
     {dados && <>
-      <p className="dashboard-atualizado">Atualizado em {new Date(dados.atualizadoEm).toLocaleString("pt-BR")}. Período exibido no fuso {filtro?.fuso}.</p>
       <div className="dashboard-corpo"><div className="dashboard-principal">
-        <section className="dashboard-resumo-periodo" aria-label="Resumo do período">
-          {[["Novas conversas", dados.novas, "conversas"], ["Atendidas por IA", dados.atendidasIa, "ia"],
-            ["Atendidas por humano", dados.atendidasHumano, "humano"]].map(([nome, valor, cor]) =>
-            <article className={`panel indicador-periodo ${cor}`} key={nome}><strong>{valor}</strong><span>{nome}</span></article>)}
-        </section>
         <section className="panel dashboard-grafico"><h2>Evolução das conversas</h2>
           {dados.evolucao.every(ponto => ponto.conversas + ponto.ia + ponto.humano === 0) && <p>Nenhuma conversa ou atendimento identificado neste período.</p>}
           <GraficoConversas pontos={dados.evolucao} />
