@@ -106,12 +106,23 @@ test("WhatsApp coleta além do histórico curto e só reserva após conferência
     if (i === 0) assert.match(resposta!, /endereço completo/);
     if (i === 1) assert.match(resposta!, /Salvador ou em Camaçari/);
     if (i === 2) assert.match(resposta!, /horários livres/);
-    if (i === 3) { assert.match(resposta!, /Confira os dados/); assert.doesNotMatch(resposta!, /Telefone:|CEP/); }
+    if (i === 3) {
+      const partes = mensagensDaConsulta(resposta!);
+      assert.equal(partes.length, 3);
+      assert.equal(partes[0], "Confira os dados antes de agendar.");
+      assert.match(partes[1], /^Nome: Paciente Exemplo\nData de nascimento: 20\/02\/1990/);
+      assert.match(partes[1], /Endereço:.*\nData da consulta em Salvador:/);
+      assert.doesNotMatch(partes[1], /Telefone:|CEP|Confirma pra gente/);
+      assert.match(partes[2], /^Os dados e o horário estão corretos\? Confirma pra gente concluir o nosso agendamento\?/);
+    }
   }
   assert.match((await conduzirCadastro(porta, "duvida", "já agendou?")) ?? "fora do cadastro", /fora do cadastro/);
   ativo = false; await assert.rejects(conduzirCadastro(porta, "pausa", "confirmo")); assert.equal(reservas, 0);
   ativo = true;
-  assert.match((await conduzirCadastro(porta, "confirmacao", "confirmo"))!, /Consulta confirmada/);
+  const confirmacao = (await conduzirCadastro(porta, "confirmacao", "confirmo"))!;
+  assert.match(confirmacao, /Consulta confirmada.*horário de Brasília.*em nome de Paciente Exemplo.*Protocolo:/);
+  assert.match(confirmacao, /O seu cadastro foi registrado em nosso sistema\./);
+  assert.equal(mensagensDaConsulta(confirmacao).length, 1);
   await conduzirCadastro(porta, "confirmacao", "confirmo"); assert.equal(reservas, 1);
 });
 test("vaga ocupada durante o cadastro oferece próxima vaga e exige nova concordância", async () => {

@@ -60,8 +60,11 @@ function fixture() {
     contactName: () => contactName, nextMessage: () => { state = null; } };
 }
 
-test("menu da agenda envia três mensagens em ordem e não repete entrega incerta", async () => {
-  const partes = ["Consultei a agenda e estes são os horários livres: 👇", "1. 15/10/2026, 08:40\n2. 15/10/2026, 09:20", "Qual desses horários você prefere? Responda com o número da opção ou com o horário. A vaga é reservada após o cadastro completo e a conferência dos dados."];
+test("menu e conferência enviam três mensagens em ordem e não repetem entrega incerta", async () => {
+  for (const partes of [
+    ["Consultei a agenda e estes são os horários livres: 👇", "1. 15/10/2026, 08:40\n2. 15/10/2026, 09:20", "Qual desses horários você prefere? Responda com o número da opção ou com o horário. A vaga é reservada após o cadastro completo e a conferência dos dados."],
+    ["Confira os dados antes de agendar.", "Nome: Paciente Exemplo\nData de nascimento: 20/02/1990\nData da consulta: 15/10/2026, 08:40", "Os dados e o horário estão corretos? Confirma pra gente concluir o nosso agendamento? Responda confirmo ou corrigir."],
+  ]) {
   for (const falhar of [false, true]) {
     const f = fixture(); const enviados: string[] = []; const registrados: string[] = [];
     f.port.cadastroConsulta = async () => partes.join("\n\n");
@@ -76,6 +79,7 @@ test("menu da agenda envia três mensagens em ordem e não repete entrega incert
     await processMessage(message, configuracao, f.port);
     assert.deepEqual(enviados, falhar ? partes.slice(0, 2) : partes);
     assert.deepEqual(registrados, falhar ? ["parte-1"] : ["parte-1", "parte-2", "parte-3"]);
+  }
   }
 });
 

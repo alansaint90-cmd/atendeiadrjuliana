@@ -388,9 +388,9 @@ function analyzeFile(file) {
     findings.push({ level: "error", id: "prompt-legado", file: rel, line: 1,
       msg: "O modelo inicial do chatbot não pode trazer um roteiro comercial embutido." });
   }
-  if (rel === "src/lib/consultas/fluxo.ts" && (!/camposPendentes/.test(content) || !/perguntaLocal/.test(content) || !/porta.extrair/.test(content))) {
+  if (rel === "src/lib/consultas/fluxo.ts" && (!/camposPendentes/.test(content) || !/perguntaLocal/.test(content) || !/porta.extrair/.test(content) || !/menuDeVagas \|\| conferencia/.test(content))) {
     findings.push({ level: "error", id: "consulta-coleta", file: rel, line: 1,
-      msg: "Coleta agrupada exige validação de campos pendentes e escolha da unidade antes da reserva." });
+      msg: "Coleta exige campos pendentes, escolha de unidade e divisão do menu e da conferência em mensagens." });
   }
   if (rel === "src/lib/consultas/repository.ts" && (!/reservaConsultaSchema.parse/.test(content) || !/FOR UPDATE/.test(content) || !/await auditar\(tx, id, "consulta_confirmada"/.test(content))) {
     findings.push({ level: "error", id: "consulta-confirmacao", file: rel, line: 1,

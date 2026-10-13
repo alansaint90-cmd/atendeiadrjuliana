@@ -20,13 +20,15 @@ function menu(opcoes: HorarioConsulta[]) {
 }
 export function mensagensDaConsulta(resposta: string): string[] {
   const partes = resposta.split("\n\n");
-  // Somente o menu administrativo é dividido; dados e confirmações ficam íntegros.
-  return partes.length === 3 && partes[0].endsWith("👇") && /^1\. /u.test(partes[1])
-    && partes[2].startsWith("Qual desses horários você prefere?") ? partes : [resposta];
+  const menuDeVagas = partes[0].endsWith("👇") && /^1\. /u.test(partes[1] ?? "")
+    && partes[2]?.startsWith("Qual desses horários você prefere?");
+  const conferencia = partes[0] === "Confira os dados antes de agendar."
+    && partes[1]?.startsWith("Nome: ") && partes[2]?.startsWith("Os dados e o horário estão corretos?");
+  return partes.length === 3 && (menuDeVagas || conferencia) ? partes : [resposta];
 }
 function resumo(d: CadastroConsulta) {
   const p = pacienteSchema.parse(d.paciente);
-  return `Confira os dados antes de agendar:\n${p.nomeCompleto}${p.telefone ? `\nTelefone: ${p.telefone}` : ""}\nNascimento: ${p.nascimento.split("-").reverse().join("/")}\nEndereço: ${p.rua}, ${p.numero}${p.complemento ? `, referência/complemento: ${p.complemento}` : ""}, ${p.bairro}, ${p.cidade}/${p.uf}${p.cep ? `, CEP ${p.cep}` : ""}\nConsulta em Salvador: ${formatarConsulta(d.horario!.inicio)} (Brasília).\nOs dados e o horário estão corretos? Responda confirmo ou corrigir. A consulta ainda não está confirmada.`;
+  return `Confira os dados antes de agendar.\n\nNome: ${p.nomeCompleto}${p.telefone ? `\nTelefone: ${p.telefone}` : ""}\nData de nascimento: ${p.nascimento.split("-").reverse().join("/")}\nEndereço: ${p.rua}, ${p.numero}${p.complemento ? `, referência/complemento: ${p.complemento}` : ""}, ${p.bairro}, ${p.cidade}/${p.uf}${p.cep ? `, CEP ${p.cep}` : ""}\nData da consulta em Salvador: ${formatarConsulta(d.horario!.inicio)} (horário de Brasília).\n\nOs dados e o horário estão corretos? Confirma pra gente concluir o nosso agendamento? Responda confirmo ou corrigir.`;
 }
 export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId: string, texto: string, iniciar = false): Promise<string | null> {
   let d = await porta.ler();
@@ -91,7 +93,7 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
       if (!await porta.ativo()) throw new Error("Cadastro pausado.");
       const reserva = await porta.reservar({ horarioId: d.horario!.id, paciente, dadosConferidos: true }, d.id);
       d.etapa = "encerrado"; d.paciente = {};
-      return responder(`Consulta confirmada para ${formatarConsulta(reserva.inicio)} (horário de Brasília), em nome de ${reserva.nomeCompleto}. Protocolo: ${reserva.id}.\nSeu cadastro foi registrado no Atende AI.`);
+      return responder(`Consulta confirmada para ${formatarConsulta(reserva.inicio)} (horário de Brasília), em nome de ${reserva.nomeCompleto}. Protocolo: ${reserva.id}.\nO seu cadastro foi registrado em nosso sistema.`);
     } catch (erro) {
       if (!(erro instanceof ErroDeNegocio)) throw erro;
       d.opcoes = (await porta.vagas(d.horario!.inicio.slice(0, 10), d.horario!.inicio)).filter(v => v.disponivel).slice(0, 6); d.etapa = d.opcoes.length ? "horario" : "encerrado";
