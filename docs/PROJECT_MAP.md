@@ -6,12 +6,12 @@
 
 | Metrica | Total |
 |---------|-------|
-| Arquivos TS/TSX | 156 |
+| Arquivos TS/TSX | 158 |
 | Tabelas (Drizzle) | 33 |
 | Server Actions (arquivos) | 12 |
 | Rotas de API | 6 |
 | Paginas | 5 |
-| Componentes | 20 |
+| Componentes | 21 |
 
 ## Arvore (profundidade 3)
 
@@ -57,6 +57,7 @@ components/
   operacao/
     page.tsx
     painel.tsx
+    resumo-clinica.tsx
   tags/
     page.tsx
   ui/
@@ -136,6 +137,7 @@ lib/
     fluxo.ts
     intencao.ts
     repository.ts
+    resumo.ts
     schema.ts
   crm/
     acesso.ts
@@ -321,7 +323,7 @@ _(colunas nao detectadas)_
 
 - `src/lib/actions/agendamentos.ts`: `carregarAgendamentos()`, `gravarAgendamento()`, `cancelarEnvioAgendado()`
 - `src/lib/actions/chatbots.ts`: `carregarChatbots()`, `salvarChatbot()`
-- `src/lib/actions/consultas.ts`: `carregarAgendaConsultas()`, `confirmarConsulta()`, `cancelarConsultaAgendada()`
+- `src/lib/actions/consultas.ts`: `carregarResumoAgenda()`, `carregarAgendaConsultas()`, `confirmarConsulta()`, `cancelarConsultaAgendada()`
 - `src/lib/actions/crm.ts`: `carregarCrm()`, `adicionarFunil()`, `adicionarMotivo()`, `modificarMotivo()`, `salvarAcessosFunis()`, `adicionarOportunidade()`, `fecharNegocio()`, `moverNegocio()`
 - `src/lib/actions/followups.ts`: `carregarFollowups()`, `salvarFollowups()`
 - `src/lib/actions/operacao.ts`: `carregarOperacao()`

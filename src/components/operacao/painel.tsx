@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { carregarPainel } from "@/lib/actions/painel";
 import type { FiltroPainel, PainelOperacional, PontoPainel } from "@/lib/operacao/painel";
 import { icon } from "@/lib/demo/icons";
+import { carregarResumoAgenda } from "@/lib/actions/consultas";
+import type { ResumoAgenda } from "@/lib/consultas/resumo";
+import { ResumoClinica } from "./resumo-clinica";
 
 type Atalho = "hoje" | "7dias" | "30dias" | "3meses" | "personalizado";
 const atalhos: { id: Atalho; nome: string }[] = [
@@ -54,7 +57,24 @@ function GraficoConversas({ pontos }: { pontos: PontoPainel[] }) {
   </>;
 }
 
-export function PainelOperacionalPage() {
+interface PainelOperacionalPageProps { podeVerAgenda?: boolean; aoVerAgenda?: () => void }
+export function PainelOperacionalPage({ podeVerAgenda = false, aoVerAgenda }: PainelOperacionalPageProps = {}) {
+  const [agenda, definirAgenda] = useState<ResumoAgenda | null>(null);
+  const [erroAgenda, definirErroAgenda] = useState("");
+  const [revisaoAgenda, atualizarAgenda] = useState(0);
+  useEffect(() => {
+    if (!podeVerAgenda) return;
+    let ativo = true;
+    const timer = setTimeout(async () => {
+      definirAgenda(null); definirErroAgenda("");
+      try {
+        const resultado = await carregarResumoAgenda();
+        if (!ativo) return;
+        if (resultado.ok) definirAgenda(resultado.dados); else definirErroAgenda(resultado.erro);
+      } catch { if (ativo) definirErroAgenda("Não foi possível consultar a agenda."); }
+    }, 0);
+    return () => { ativo = false; clearTimeout(timer); };
+  }, [podeVerAgenda, revisaoAgenda]);
   const [dados, definirDados] = useState<PainelOperacional | null>(null);
   const [geral, definirGeral] = useState<Pick<PainelOperacional, "abertas" | "pendentes" | "atendimentoIa" | "atendimentoHumano"> | null>(null);
   const [canais, definirCanais] = useState<PainelOperacional["canais"]>([]);
@@ -92,7 +112,10 @@ export function PainelOperacionalPage() {
       fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC", canalId });
   }
   return <div className="page-stack dashboard-page">
-    <section className="page-head"><div><h1 className="dashboard-titulo"><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: icon("clock") }} />Conversas em tempo real</h1><p>Indicadores calculados com dados reais do WhatsApp.</p></div></section>
+    <ResumoClinica dados={dados} agenda={agenda} podeVerAgenda={podeVerAgenda} aoVerAgenda={aoVerAgenda}
+      periodo={atalho === "7dias" ? "Últimos 7 dias" : atalhos.find(a => a.id === atalho)?.nome ?? "Período selecionado"} />
+    {podeVerAgenda && !agenda && !erroAgenda && <p role="status">Consultando agenda…</p>}
+    {erroAgenda && <p role="alert">{erroAgenda} <button type="button" className="secondary" onClick={() => atualizarAgenda(r => r + 1)}>Tentar consultar agenda novamente</button></p>}
     {geral && <section className="kpi-grid" aria-label="Resumo geral">
       {[["Conversas abertas", geral.abertas, "green", "message"], ["Pendentes", geral.pendentes, "red", "clock"],
         ["Atendimento com IA", geral.atendimentoIa, "ia", "spark"], ["Atendimento humano", geral.atendimentoHumano, "orange", "users"]].map(([nome, valor, cor, icone]) =>

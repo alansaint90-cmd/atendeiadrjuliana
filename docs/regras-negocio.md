@@ -2,6 +2,8 @@
 
 ## Atendimento da Dra. Juliana Matos
 
+- O dashboard da clínica mostra novas conversas no período/canal escolhido e conversas atendidas pela IA. O percentual divide as atendidas pela IA pelo total distinto de conversas com atendimento identificado (IA ou humano), sem duplicar as atendidas pelos dois. Sem atendimentos, mostra 0%. Gerentes veem também as reservas confirmadas e vagas futuras livres da próxima quinta com inícios ainda futuros, no fuso de Brasília; quinta após o último início passa à semana seguinte. Esses dois cards abrangem todos os chips e não seguem o filtro de conversas. A leitura `carregarResumoAgenda` não cria vagas nem retorna dados pessoais. Erros e carregamento exibem “—”, nunca zeros fictícios; “Ver agenda” abre o módulo existente.
+
 - O prompt específico fica em `config/chatbots/dra-juliana-matos.json` e é salvo explicitamente no chatbot da instância `drjulianaatendeai`; o arquivo não é importado automaticamente no deploy.
 - Pedidos gerais sobre a consulta recebem a apresentação da médica antes dos detalhes. A conversa segue com investimento, endereço e horário, sem bloquear o preço por perguntas de qualificação nem repetir a apresentação em dúvidas específicas.
 - Em Salvador, na Clínica Bonvida: consulta com duração média de 40 minutos; cartão R$ 430,00 em até 2x de R$ 215,00; à vista/Pix R$ 400,00; retorno com 30 dias e nota fiscal. Não presumir gratuidade ou outras condições do retorno.

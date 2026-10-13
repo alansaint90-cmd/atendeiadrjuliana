@@ -4,8 +4,8 @@ import { carregarOperacao } from "@/lib/actions/operacao";
 import type { ResumoOperacional } from "@/lib/operacao/consultas";
 import { PainelOperacionalPage } from "./painel";
 
-export function OperacaoPage({ rota }: { rota: string }) {
-  return rota === "dashboard" ? <PainelOperacionalPage /> : <ListaOperacionalPage rota={rota} />;
+export function OperacaoPage({ rota, podeVerAgenda = false, aoVerAgenda }: { rota: string; podeVerAgenda?: boolean; aoVerAgenda?: () => void }) {
+  return rota === "dashboard" ? <PainelOperacionalPage podeVerAgenda={podeVerAgenda} aoVerAgenda={aoVerAgenda} /> : <ListaOperacionalPage rota={rota} />;
 }
 
 function ListaOperacionalPage({ rota }: { rota: string }) {

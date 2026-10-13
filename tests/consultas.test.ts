@@ -10,6 +10,7 @@ import { horariosDoDia, proximasQuintas } from "../src/lib/consultas/calendario"
 import { pacienteSchema, type PacienteConsulta } from "../src/lib/consultas/schema";
 import { conduzirCadastro, mensagensDaConsulta, type CadastroConsulta, type PortaCadastroConsulta } from "../src/lib/consultas/fluxo";
 import { ErroDeNegocio } from "../src/lib/acao";
+import { consultarResumoAgenda } from "../src/lib/consultas/resumo";
 
 const paciente: PacienteConsulta = { nomeCompleto: "Paciente Exemplo", telefone: "+5571999999999", nascimento: "1990-02-20", cep: "41810011",
   rua: "Rua de Teste", numero: "10", complemento: "", bairro: "Bairro Teste", cidade: "Salvador", uf: "BA" };
@@ -67,6 +68,10 @@ test("reserva persiste paciente, bloqueia duplicidade entre chips, audita e canc
     }
     await assert.rejects(reservarConsulta(banco, { ...pedido, dadosConferidos: false }, contexto()));
     const origem = contexto(); const reserva = await reservarConsulta(banco, pedido, origem);
+    const referencia = Date.parse(`${dia()}T07:00:00-03:00`);
+    const resumo = await consultarResumoAgenda(banco, referencia);
+    assert.equal(resumo.confirmadas, 1); assert.equal(resumo.livres.length, 5);
+    assert.equal(resumo.livres.includes(vagas[0].inicio), false);
     assert.equal(reserva.nomeCompleto, paciente.nomeCompleto);
     assert.equal((await reservarConsulta(banco, pedido, origem)).id, reserva.id, "repetição não cria outra consulta");
     await assert.rejects(reservarConsulta(banco, pedido, { ...contexto(), instancia: "segundo-chip" }), /ocupado/);
@@ -81,6 +86,11 @@ test("reserva persiste paciente, bloqueia duplicidade entre chips, audita e canc
     await cancelarConsulta(banco, { id: reserva.id, atualizadoEm: reserva.atualizadoEm }, systemUserId);
     assert.equal((await consultarHorarios(banco, dia()))[0].disponivel, true);
     assert.equal((await listarConsultas(banco, dia()))[0].status, "cancelada");
+    const aposCancelar = await consultarResumoAgenda(banco, referencia);
+    assert.equal(aposCancelar.confirmadas, 1, "a reserva disputada permanece; a cancelada não conta");
+    assert.equal(aposCancelar.livres.includes(vagas[0].inicio), true);
+    const tarde = await consultarResumoAgenda(banco, Date.parse(`${dia()}T12:00:00-03:00`));
+    assert.notEqual(tarde.dia, dia()); assert.equal(tarde.livres.length, 6);
     await reservarConsulta(banco, pedido, contexto());
     assert.equal((await listarConsultas(banco, dia())).length, 3);
     const semOpcionais = await reservarConsulta(banco, { ...pedido, horarioId: vagas[5].id, paciente: { ...paciente, telefone: "", cep: "", uf: "" } }, contexto());

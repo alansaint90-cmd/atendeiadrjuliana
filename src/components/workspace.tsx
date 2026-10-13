@@ -30,7 +30,7 @@ export function Workspace({ papel, nome, email, foto, rotaInicial = "dashboard" 
         {gestor && route === "team" && <UsuariosPage papel={papel} />}
         {papel === "super_admin" && route === "settings" && <Settings />}
         {route === "plans" && <AssinaturaPage />}
-        <div hidden={!["dashboard", "contacts", "inbox"].includes(route)}><OperacaoPage rota={route} /></div>
+        <div hidden={!["dashboard", "contacts", "inbox"].includes(route)}><OperacaoPage rota={route} podeVerAgenda={gestor} aoVerAgenda={() => setRoute("consultas")} /></div>
         {!["dashboard", "contacts", "inbox", "team", "plans"].includes(route) && demoViews[route] && <div className="page-stack demo-view" dangerouslySetInnerHTML={{ __html: demoViews[route]() }} />}
       </main>
   </PainelShell>;

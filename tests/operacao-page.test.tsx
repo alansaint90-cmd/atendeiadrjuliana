@@ -1,13 +1,44 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { OperacaoPage } from "@/components/operacao/page";
 import { carregarOperacao } from "@/lib/actions/operacao";
 import { carregarPainel } from "@/lib/actions/painel";
+import { carregarResumoAgenda } from "@/lib/actions/consultas";
+vi.mock("@/lib/actions/consultas", () => ({ carregarResumoAgenda: vi.fn() }));
 vi.mock("@/lib/actions/operacao", () => ({ carregarOperacao: vi.fn() }));
 vi.mock("@/lib/actions/painel", () => ({ carregarPainel: vi.fn() }));
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
 const painelVazio = { abertas: 0, pendentes: 0, atendimentoIa: 0, atendimentoHumano: 0,
-  novas: 0, atendidasIa: 0, atendidasHumano: 0, canais: [], contatos: [], evolucao: [], atualizadoEm: "2026-09-17T10:00:00.000Z" };
+  novas: 0, atendidasIa: 0, atendidasHumano: 0, totalAtendidas: 0, canais: [], contatos: [], evolucao: [], atualizadoEm: "2026-09-17T10:00:00.000Z" };
+
+test("gerente vê métricas reais, percentual e abre a agenda", async () => {
+  vi.mocked(carregarPainel).mockResolvedValue({ ok: true, dados: { ...painelVazio, novas: 24, atendidasIa: 18, totalAtendidas: 24 } });
+  vi.mocked(carregarResumoAgenda).mockResolvedValue({ ok: true, dados: { dia: "2026-10-15", confirmadas: 4, livres: ["2026-10-15T13:40:00.000Z", "2026-10-15T14:20:00.000Z"] } });
+  const abrir = vi.fn();
+  render(<OperacaoPage rota="dashboard" podeVerAgenda aoVerAgenda={abrir} />);
+  const resumo = within(screen.getByRole("region", { name: "Resumo da clínica" }));
+  expect(await resumo.findByText("75% das conversas atendidas")).toBeInTheDocument();
+  expect(await resumo.findByText("10:40 · 11:20")).toBeInTheDocument();
+  expect(resumo.getByText("4")).toBeInTheDocument();
+  expect(resumo.getByText("2")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Ver agenda" }));
+  expect(abrir).toHaveBeenCalledOnce();
+});
+
+test("SDR não solicita dados da agenda e falha não simula vagas vazias", async () => {
+  vi.mocked(carregarPainel).mockResolvedValue({ ok: true, dados: painelVazio });
+  const tela = render(<OperacaoPage rota="dashboard" />);
+  await screen.findByText("Nenhum contato com atividade no período.");
+  expect(carregarResumoAgenda).not.toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Ver agenda" })).not.toBeInTheDocument();
+  tela.unmount();
+  vi.mocked(carregarResumoAgenda).mockResolvedValue({ ok: false, erro: "Agenda indisponível." });
+  render(<OperacaoPage rota="dashboard" podeVerAgenda aoVerAgenda={vi.fn()} />);
+  expect(await screen.findByRole("alert")).toHaveTextContent("Agenda indisponível.");
+  await screen.findByText("Nenhum contato com atividade no período.");
+  const resumo = within(screen.getByRole("region", { name: "Resumo da clínica" }));
+  expect(resumo.getAllByText("—")).toHaveLength(2);
+});
 
 test("dashboard autorizado sem dados mostra zeros reais e permite trocar o período", async () => {
   vi.mocked(carregarPainel).mockResolvedValue({ ok: true, dados: painelVazio });

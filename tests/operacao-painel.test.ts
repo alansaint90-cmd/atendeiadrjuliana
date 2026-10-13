@@ -65,6 +65,7 @@ test("painel filtra período e canal sem atribuir envio genérico à IA ou human
     painel = await consultarPainel(banco, filtro());
     assert.equal(painel.atendimentoHumano, 1);
     assert.equal(painel.atendidasHumano, 1);
+    assert.equal(painel.totalAtendidas, 1, "a mesma conversa atendida por IA e humano conta uma vez no denominador");
     await receberOperacao(banco, evento("chip-b", "entrada-b", false, "5571888888888"));
     const canalA = painel.canais.find(canal => canal.nome === "chip-a")?.id;
     assert.ok(canalA);

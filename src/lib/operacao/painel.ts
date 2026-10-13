@@ -14,7 +14,7 @@ export type FiltroPainel = z.infer<typeof filtroPainelSchema>;
 export interface PontoPainel { dia: string; conversas: number; ia: number; humano: number }
 export interface PainelOperacional {
   abertas: number; pendentes: number; atendimentoIa: number; atendimentoHumano: number;
-  novas: number; atendidasIa: number; atendidasHumano: number;
+  novas: number; atendidasIa: number; atendidasHumano: number; totalAtendidas: number;
   canais: { id: string; nome: string }[];
   contatos: { id: string; nome: string; telefone: string | null }[];
   evolucao: PontoPainel[]; atualizadoEm: string;
@@ -58,12 +58,14 @@ export async function consultarPainel(banco: BancoSql, entrada: unknown): Promis
         ORDER BY sent_at DESC,created_at DESC,id DESC LIMIT 1) ultimo ON true
       WHERE c.is_deleted=false AND p.is_deleted=false AND ch.is_deleted=false`));
     etapa = "P04";
-    const [periodo] = linhas<{ novas: number; ia: number; humano: number }>(await tx.execute(sql`
+    const [periodo] = linhas<{ novas: number; ia: number; humano: number; atendidas: number }>(await tx.execute(sql`
       SELECT count(*) FILTER (WHERE c.created_at>=${inicio.toISOString()} AND c.created_at<${fim.toISOString()})::int novas,
         count(*) FILTER (WHERE EXISTS(SELECT 1 FROM atendeia_messages m WHERE m.conversation_id=c.id AND m.is_deleted=false
           AND m.direction='outbound' AND m.sender_type='bot' AND m.sent_at>=${inicio.toISOString()} AND m.sent_at<${fim.toISOString()}))::int ia,
         count(*) FILTER (WHERE EXISTS(SELECT 1 FROM atendeia_messages m WHERE m.conversation_id=c.id AND m.is_deleted=false
-          AND m.direction='outbound' AND m.sender_type='agent' AND m.sent_at>=${inicio.toISOString()} AND m.sent_at<${fim.toISOString()}))::int humano
+          AND m.direction='outbound' AND m.sender_type='agent' AND m.sent_at>=${inicio.toISOString()} AND m.sent_at<${fim.toISOString()}))::int humano,
+        count(*) FILTER (WHERE EXISTS(SELECT 1 FROM atendeia_messages m WHERE m.conversation_id=c.id AND m.is_deleted=false
+          AND m.direction='outbound' AND m.sender_type IN ('bot','agent') AND m.sent_at>=${inicio.toISOString()} AND m.sent_at<${fim.toISOString()}))::int atendidas
       FROM atendeia_conversations c JOIN atendeia_contacts p ON p.id=c.contact_id JOIN atendeia_channels ch ON ch.id=c.channel_id
       WHERE c.is_deleted=false AND p.is_deleted=false AND ch.is_deleted=false AND ${canal}`));
     etapa = "P05";
@@ -94,7 +96,7 @@ export async function consultarPainel(banco: BancoSql, entrada: unknown): Promis
         AND c.last_message_at>=${inicio.toISOString()} AND c.last_message_at<${fim.toISOString()}
       GROUP BY p.id,p.name,p.phone ORDER BY max(c.last_message_at) DESC,p.id LIMIT 7`));
     return { abertas: geral.abertas, pendentes: geral.pendentes, atendimentoIa: geral.ia, atendimentoHumano: geral.humano,
-      novas: periodo.novas, atendidasIa: periodo.ia, atendidasHumano: periodo.humano,
+      novas: periodo.novas, atendidasIa: periodo.ia, atendidasHumano: periodo.humano, totalAtendidas: periodo.atendidas,
       canais, contatos, evolucao, atualizadoEm: new Date().toISOString() };
   }); } catch (erro) {
     if (erro instanceof ErroDeNegocio) throw erro;

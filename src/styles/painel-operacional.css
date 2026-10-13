@@ -1,4 +1,7 @@
 .dashboard-page { gap: 18px; }
+.clinica-sobretitulo { font-size: 10px; font-weight: 600; color: var(--marca-acao); letter-spacing: 1.5px; margin-bottom: 10px; }
+.clinica-kpi-label { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.clinica-resumo small { line-height: 1.6; overflow-wrap: anywhere; }
 .dashboard-titulo { display: flex; align-items: center; gap: 10px; }
 .dashboard-titulo > span { display: inline-flex; flex-shrink: 0; }
 .dashboard-titulo .icon { width: 20px; height: 20px; }

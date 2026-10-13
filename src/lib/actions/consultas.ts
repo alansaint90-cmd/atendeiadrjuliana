@@ -10,6 +10,14 @@ import { instanciasConfiguradas } from "../evolution/instancias";
 import { dataConsultaSchema } from "../consultas/calendario";
 import { identidadeConsultaSchema, reservaConsultaSchema, instanciaConsultaSchema } from "../consultas/schema";
 import { consultarHorarios, listarConsultas, reservarConsulta, cancelarConsulta } from "../consultas/repository";
+import { consultarResumoAgenda } from "../consultas/resumo";
+
+export async function carregarResumoAgenda() {
+  return executar(async () => {
+    const sessao = await exigirSessao(); await exigirPermissao(sessao, "admin");
+    return consultarResumoAgenda(db());
+  });
+}
 
 export async function carregarAgendaConsultas(entrada: unknown) {
   return executar(async () => {

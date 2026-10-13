@@ -5,13 +5,10 @@ import { PainelShell } from "@/components/painel-shell";
 import { icon } from "@/lib/demo/icons";
 import { AgendaPrevia } from "./agenda-previa";
 import "./previa.css";
+import { ResumoClinica } from "@/components/operacao/resumo-clinica";
 
-const indicadores = [
-  { titulo: "Conversas no período", valor: "24", nota: "Últimos 7 dias", icone: "message", cor: "blue" },
-  { titulo: "Atendimentos pela IA", valor: "18", nota: "75% dos atendimentos", icone: "spark", cor: "green" },
-  { titulo: "Consultas confirmadas", valor: "4", nota: "Próxima quinta-feira", icone: "calendar", cor: "blue" },
-  { titulo: "Horários disponíveis", valor: "2", nota: "10h40 e 11h20", icone: "clock", cor: "orange" },
-];
+const indicadores = { abertas: 24, pendentes: 0, atendimentoIa: 18, atendimentoHumano: 6,
+  novas: 24, atendidasIa: 18, atendidasHumano: 6, totalAtendidas: 24, canais: [], contatos: [], evolucao: [], atualizadoEm: "2026-10-13T12:00:00.000Z" };
 
 export function PreviaDesign() {
   const [rota, setRota] = useState("dashboard");
@@ -32,11 +29,8 @@ export function PreviaDesign() {
         </div>
       </div>
       {rota === "consultas" ? <AgendaPrevia /> : <div className="page-stack dashboard-page">
-        <header className="page-head"><div><div className="previa-sobretitulo">CLÍNICA BONVIDA · SALVADOR</div><h1>Seu atendimento, em dia.</h1><p>Acompanhe as conversas e prepare a próxima manhã de consultas.</p></div>
-          <button className="primary" onClick={() => setRota("consultas")}><span dangerouslySetInnerHTML={{ __html: icon("calendar") }} />Ver agenda</button></header>
-        <div className="kpi-grid">{indicadores.map(i => <article className={`kpi ${i.cor}`} key={i.titulo}>
-          <div className="previa-kpi-label"><span>{i.titulo}</span><span dangerouslySetInnerHTML={{ __html: icon(i.icone) }} /></div><strong>{i.valor}</strong><small>{i.nota}</small>
-        </article>)}</div>
+        <ResumoClinica dados={indicadores} periodo="Últimos 7 dias" podeVerAgenda aoVerAgenda={() => setRota("consultas")}
+          agenda={{ dia: "2026-10-15", confirmadas: 4, livres: ["2026-10-15T13:40:00.000Z", "2026-10-15T14:20:00.000Z"] }} />
         <div className="previa-colunas"><section className="panel"><div className="panel-title"><div><h2>Próximas consultas</h2><p>Quinta-feira, 15 de outubro · horário de Brasília</p></div><span className="badge green">4 confirmadas</span></div>
           <div className="table"><table><thead><tr><th>Paciente</th><th>Horário</th><th>Status</th></tr></thead><tbody>
             {["Marina Oliveira", "Pedro Almeida", "Clara Santos", "Lucas Costa"].map((nome, i) => <tr key={nome}><td><div className="previa-paciente"><span className="avatar">{nome.split(" ").map(n => n[0]).join("")}</span><div><strong>{nome}</strong><small>Paciente fictício</small></div></div></td><td>{["08:00", "08:40", "09:20", "10:00"][i]}</td><td><span className="badge green">Confirmada</span></td></tr>)}
