@@ -20,6 +20,7 @@ import { registrarEnvioIa } from "../operacao/atribuir-ia";
 import { pausaManualAtiva, pausarTransferencia } from "./pausa";
 import { transferirAtendimento } from "../operacao/transferir";
 import { cadastroDaConversa } from "../consultas/fluxo-servidor";
+import { deveAguardarResposta } from "./espera";
 
 const streamResult = z.array(z.tuple([z.string(), z.array(z.tuple([z.string(), z.array(z.string())]))]));
 let started = false;
@@ -73,6 +74,8 @@ export async function runAgentTick(substituicoes: Partial<typeof dependenciasPad
       const message = parsed.success && config.success ? incomingMessage(parsed.data, instancia, Date.now(), config.data.atendimento?.transferMedia) : null;
       let result = "ignorada";
       if (message && config.success) {
+        if (!await pausaManualAtiva(client, message.conversation)
+          && deveAguardarResposta(config.data.agendaConsultas, message.timestamp)) return false;
         const store = messageStore(client, token, message);
         const atendimentoAtivo = async () => {
           const atual = configurarAgente(settingsDaInstancia(await dependencies.settings(), instancia), await dependencies.chatbot(instancia));

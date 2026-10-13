@@ -1,11 +1,11 @@
 import type { Turn } from "../agent/providers";
+import { interpretarEscolha } from "./escolha";
 
 const normalizar = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
 const foraDaAgenda = /camacari|semerge|remarcar|reagendar|cancelar|desmarcar|nao (?:quero|preciso)|falta de ar|dor no peito|urgencia|socorro|sintoma|atendente|humano|recepcao/;
 
 export function horaInformada(texto: string): string | null {
-  const hora = normalizar(texto).match(/^(?:(?:quero|prefiro|pode ser|as|o horario das)\s+)?(0?[89]|1[01])(?:\s*(?:h|:|e)\s*([0-5]\d)?)?\s*(?:horas)?\s*(?:pode ser|por favor)?\s*[?!.]*$/);
-  return hora ? `${hora[1].padStart(2, "0")}:${hora[2] ?? "00"}` : null;
+  return interpretarEscolha(texto).hora ?? null;
 }
 
 export function deveConsultarAgenda(texto: string, historico: Turn[]): boolean {
@@ -18,6 +18,6 @@ export function deveConsultarAgenda(texto: string, historico: Turn[]): boolean {
     || /\b(?:quero|gostaria|preciso).*(?:horario|vaga)/.test(entrada)
     || /(?:horario|vaga)s?.*(?:livre|disponivel)|(?:tem|quais|qual|consultar|verificar).*(?:horario|vaga)|(?:horario|vaga).*quinta/.test(entrada);
   const continuacao = /horario|vaga|agend/.test(ultimaFala)
-    && (/^(?:sim|pode|pode sim|quero|pode verificar|pode consultar|por favor)[.!]*$/.test(entrada) || horaInformada(entrada) !== null);
+    && (/^(?:sim|pode|pode sim|quero|pode verificar|pode consultar|por favor)[.!]*$/.test(entrada) || horaInformada(entrada) !== null || Boolean(interpretarEscolha(entrada).dia));
   return pedidoDireto || continuacao;
 }

@@ -11,25 +11,6 @@
  *   node scripts/check-compliance.mjs --help
  *
  * Exit code: 1 se houver ERROS, 0 caso contrario (avisos nao falham).
- *
- * Regras checadas:
- *   [ERRO]  prisma / sqlite       — o projeto usa Drizzle + PostgreSQL
- *   [ERRO]  delete-fisico         — db/tx.delete(), deleteMany(), DELETE FROM
- *   [ERRO]  drop-destrutivo       — DROP TABLE/DATABASE/SCHEMA em .sql
- *   [ERRO]  arquivo-grande        — mais de 500 linhas (exceto src/components/ui/)
- *   [ERRO]  tabela-sem-auditoria  — pgTable sem as 5 colunas (inclui modified_by)
- *   [ERRO]  timestamp-cru         — timestamp("x") sem precision 3 (quebra a trava)
- *   [ERRO]  fk-sem-ondelete       — .references(() => x.id) sem onDelete explicito
- *   [ERRO]  segredo               — chaves de API, tokens, chaves privadas
- *   [ERRO]  texto-cru             — mojibake, ou escape \u00XX em .tsx/.jsx
- *   [ERRO]  config-super-admin    — leitura de Configurações exige super administrador
- *   [ERRO]  prompt-legado         — não importar roteiro comercial antigo automaticamente
- *   [ERRO]  orquestrador-legado   — contexto geral não entra nas respostas nem na tela
- *   [ERRO]  mentoria-individual   — instruções da Thaís preservam o formato individual
- *   [ERRO]  nome-cliente          — resposta substitui marcadores e guarda nome confirmado
- *   [AVISO] query-sem-filtro      — select/findMany sem filtro de is_deleted
- *   [AVISO] cascade               — onDelete: 'cascade' (preferir restrict)
- *   [AVISO] onupdate-updated-at   — $onUpdate em updated_at envelhece a trava
  */
 
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
@@ -391,6 +372,10 @@ function analyzeFile(file) {
   if (rel === "src/lib/consultas/coleta.ts" && /const endereco = [^\n]*"uf"/.test(content)) {
     findings.push({ level: "error", id: "consulta-uf", file: rel, line: 1,
       msg: "O cadastro não deve solicitar estado/UF como dado pendente." });
+  }
+  if (rel === "src/lib/consultas/fluxo.ts" && (!/interpretarEscolha\(entrada/.test(content) || !/HORARIOS_CONSULTA\.some/.test(content) || !/=== escolha\.dia/.test(content))) {
+    findings.push({ level: "error", id: "consulta-escolha", file: rel, line: 1,
+      msg: "Escolhas naturais devem validar horário permitido e preservar a data solicitada." });
   }
   if (rel === "src/lib/consultas/fluxo.ts" && (!/camposPendentes/.test(content) || !/perguntaLocal/.test(content) || !/porta.extrair/.test(content) || !/menuDeVagas \|\| conferencia/.test(content) || !/partes\[1\] === avisoChegada/.test(content))) {
     findings.push({ level: "error", id: "consulta-coleta", file: rel, line: 1,

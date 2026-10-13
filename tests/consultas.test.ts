@@ -132,7 +132,9 @@ test("WhatsApp coleta além do histórico curto e só reserva após conferência
   assert.match((await conduzirCadastro(porta, "duvida", "já agendou?")) ?? "fora do cadastro", /fora do cadastro/);
   ativo = false; await assert.rejects(conduzirCadastro(porta, "pausa", "confirmo")); assert.equal(reservas, 0);
   ativo = true;
-  const confirmacao = (await conduzirCadastro(porta, "confirmacao", "confirmo"))!;
+  assert.match((await conduzirCadastro(porta, "ressalva", "sim, mas o endereço está errado"))!, /Confira os dados/);
+  assert.equal(reservas, 0);
+  const confirmacao = (await conduzirCadastro(porta, "confirmacao", "Sim, está tudo certo."))!;
   assert.match(confirmacao, /^Consulta confirmada:\nDia: \d{2}\/\d{2}\/\d{4}\nHorário: 08:00 \(horário de Brasília\)\nNome do paciente: Paciente Exemplo\nProtocolo:/);
   assert.match(confirmacao, /O seu cadastro foi registrado em nosso sistema\./);
   assert.equal(mensagensDaConsulta(confirmacao).length, 2);

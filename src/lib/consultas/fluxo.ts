@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { ErroDeNegocio } from "../acao";
 import { pacienteSchema, formatarConsulta, type PacienteConsulta, type HorarioConsulta, type Consulta } from "./schema";
-import { horaInformada } from "./intencao";
+import { interpretarEscolha } from "./escolha";
+import { HORARIOS_CONSULTA } from "./calendario";
 import { camposPendentes, perguntaDados, perguntaIdentificacao, perguntaLocal, normalizarCampo, type CampoPaciente } from "./coleta";
 
 const campos = ["nomeCompleto", "telefone", "nascimento", "cep", "rua", "numero", "complemento", "bairro", "cidade"] as const;
@@ -13,6 +14,7 @@ export interface PortaCadastroConsulta {
   ler(): Promise<CadastroConsulta | null>; salvar(dados: CadastroConsulta): Promise<void>;
   vagas(dia?: string, depoisDe?: string): Promise<HorarioConsulta[]>; reservar(dados: { horarioId: string; paciente: PacienteConsulta; dadosConferidos: true }, identidade: string): Promise<Consulta>;
   ativo(): Promise<boolean>;
+  agora?(): number;
   extrair?(texto: string, campos: CampoPaciente[]): Promise<Partial<Record<CampoPaciente, string>>>;
 }
 function menu(opcoes: HorarioConsulta[]) {
@@ -71,15 +73,20 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
     return responder(menu(d.opcoes));
   }
   if (d.etapa === "horario") {
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(entrada)) {
-      try { d.opcoes = (await porta.vagas(entrada.split("/").reverse().join("-"))).filter(v => v.disponivel).slice(0, 6); }
-      catch (erro) { return responder(erro instanceof ErroDeNegocio ? erro.message : "Confira a data: informe uma quinta-feira futura no formato dia/mês/ano."); }
-      return responder(menu(d.opcoes));
+    const escolha = interpretarEscolha(entrada, porta.agora?.());
+    if (escolha.erro) return responder(escolha.erro);
+    if ((escolha.dia && new Date(`${escolha.dia}T12:00:00-03:00`).getUTCDay() !== 4)
+      || (escolha.hora && !HORARIOS_CONSULTA.some(h => h === escolha.hora))) {
+      return responder(`A Dra. Juliana atende em Salvador somente às quintas-feiras, nos horários da agenda abaixo.\n${menu(d.opcoes)}`);
     }
-    const hora = horaInformada(entrada);
+    if (escolha.dia) {
+      try { d.opcoes = (await porta.vagas(escolha.dia)).filter(v => v.disponivel).slice(0, 6); }
+      catch (erro) { return responder(erro instanceof ErroDeNegocio ? erro.message : "Não consegui consultar essa data. Tente novamente em instantes."); }
+    }
+    const hora = escolha.hora;
     if (!hora && entrada.includes("?") && !/hor[aá]rio|vaga|quinta|segunda|terça|quarta|sexta|sábado|domingo/iu.test(entrada)) return null;
-    const candidatas = hora ? d.opcoes.filter(v => new Date(v.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) === hora) : [];
-    const opcao = /^\d{1,2}$/.test(entrada) && d.opcoes[Number(entrada) - 1] || (candidatas.length === 1 ? candidatas[0] : undefined);
+    const candidatas = hora ? d.opcoes.filter(v => (!escolha.dia || new Date(v.inicio).toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) === escolha.dia) && new Date(v.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) === hora) : [];
+    const opcao = escolha.opcao ? d.opcoes[escolha.opcao - 1] : candidatas.length === 1 ? candidatas[0] : undefined;
     if (!opcao) return responder(menu(d.opcoes));
     d.horario = opcao; d.etapa = camposPendentes(d.paciente).length ? "dados" : d.local ? "conferencia" : "local";
     return responder(d.etapa === "conferencia" ? resumo(d) : d.etapa === "local" ? perguntaLocal : perguntaDados(d.paciente));
@@ -89,7 +96,7 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
     // Cadastros anteriores à escolha de unidade já eram exclusivos de Salvador.
     d.local ??= "salvador";
     if (/^(corrigir|não|nao)$/iu.test(entrada)) { d.paciente = {}; d.etapa = "dados"; return responder(perguntaIdentificacao); }
-    if (!/^(sim|confirmo|confirmar|está correto|esta correto|pode agendar)[.!]?$/iu.test(entrada)) return responder(resumo(d));
+    if (!/^(?:(?:sim[, ]+)?(?:confirmo|confirmar|est[aá] correto|est[aá] tudo (?:certo|correto)|os dados est[aã]o corretos|pode (?:agendar|confirmar))|sim)[.!]?$/iu.test(entrada)) return responder(resumo(d));
     const paciente = pacienteSchema.parse(d.paciente);
     try {
       if (!await porta.ativo()) throw new Error("Cadastro pausado.");

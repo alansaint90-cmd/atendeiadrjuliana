@@ -229,6 +229,11 @@ obrigatórios; telefone, CEP e complemento/referência são opcionais. Estado/UF
 e nascimento juntos, depois endereço em um balão e então a unidade. Salvador
 continua na agenda; Camaçari recebe o contato do SEMERGE, sem reserva local.
 Extração aceita somente trechos informados e validados, sem inventar dados.
+Texto e transcrição de áudio compartilham a interpretação de datas e números
+por extenso; escolhas ambíguas pedem esclarecimento. A data escolhida não pode
+ser substituída silenciosamente por outra semana. Horários fora da agenda não
+são reservados. Com agenda habilitada, esperar pelo menos oito segundos desde
+a mensagem, preservando pausa humana e proteção contra entrega duplicada.
 Conferir os dados antes
 da reserva. Só confirmar após gravar a reserva e auditoria na mesma transação.
 Trava da vaga e índice único impedem duplicidade mesmo entre chips. Cadastro

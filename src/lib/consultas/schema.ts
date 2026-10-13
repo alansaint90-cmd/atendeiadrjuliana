@@ -4,7 +4,7 @@ const texto = (rotulo: string, max = 150) => z.string().trim().min(1, `Informe $
 export const pacienteSchema = z.strictObject({
   nomeCompleto: texto("o nome completo").regex(/^\p{L}[\p{L}'’.-]*(?:\s+[\p{L}'’.-]+)+$/u, "Informe nome e sobrenome do paciente."),
   telefone: z.string().trim().regex(/^$|^\+[1-9]\d{6,14}$/, "Informe telefone com DDI e DDD ou deixe em branco.").default(""),
-  nascimento: z.iso.date().refine(valor => valor <= new Date().toISOString().slice(0, 10) && valor >= "1900-01-01", "Informe uma data de nascimento válida, sem data futura.")
+  nascimento: z.iso.date({ error: "Informe uma data de nascimento válida, com dia, mês e ano." }).refine(valor => valor <= new Date().toISOString().slice(0, 10) && valor >= "1900-01-01", "Informe uma data de nascimento válida, sem data futura.")
     .refine(valor => {
       const hoje = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
       const limite = `${Number(hoje.slice(0,4)) - 5}${hoje.slice(4)}`;
