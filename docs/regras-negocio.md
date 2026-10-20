@@ -153,3 +153,5 @@
 - Cada usuário autenticado pode editar apenas o próprio nome, celular e foto. O e-mail de acesso e o papel não são alterados nessa tela. A foto aceita JPG/PNG de até 2 MiB; fica no cadastro protegido. A gravação usa versão para evitar sobrescrever outra sessão e registra os campos alterados na auditoria sem armazenar a imagem na trilha.
 
 Dúvidas sobre preço, pagamento, endereço da clínica e disponibilidade têm prioridade sobre a coleta de dados do paciente em qualquer etapa. O fluxo responde diretamente, consulta vagas reais e preserva os dados já informados. Mensagens sem dados de cadastro voltam ao agente para esclarecimento, sem repetir automaticamente a pergunta pendente.
+
+Após esclarecer uma dúvida durante um cadastro em andamento, retomar a etapa pendente na mesma resposta, depois da informação solicitada. Preservar nome, nascimento, endereço e horário já informados; consultar disponibilidade não reinicia nem adianta etapas do cadastro.

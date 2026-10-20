@@ -16,7 +16,10 @@ for (const etapa of ["dados", "local", "horario", "conferencia"] as const) {
     };
     const preco = await conduzirCadastro(porta, "preco", "Gostaria de saber antes o valor da consulta");
     assert.match(preco!, /400,00.*Pix.*430,00.*215,00/s);
-    assert.doesNotMatch(preco!, /endereço completo|nome completo/);
+    assert.ok(preco!.indexOf("400,00") < preco!.indexOf("Retomando seu agendamento:"));
+    assert.match(preco!, /Retomando seu agendamento:/);
+    if (etapa === "dados") assert.match(preco!, /endereço completo/);
+    assert.doesNotMatch(preco!, /nome completo/);
     assert.equal(estado.etapa, etapa);
     assert.equal(consultas, 0);
     const combinado = await conduzirCadastro(porta, "ambos", "Gostaria de saber o valor da consulta e os horários disponíveis");
@@ -28,7 +31,8 @@ for (const etapa of ["dados", "local", "horario", "conferencia"] as const) {
     assert.equal(estado.paciente.nascimento, "1990-02-20");
     const endereco = await conduzirCadastro(porta, "endereco", "Qual o endereço da clínica");
     assert.match(endereco!, /Bonvida.*1541.*7024/s);
-    assert.doesNotMatch(endereco!, /endereço completo do paciente/);
+    assert.ok(endereco!.indexOf("Bonvida") < endereco!.indexOf("Retomando seu agendamento:"));
+    assert.equal(estado.etapa, etapa);
   });
 }
 test("outras dúvidas não repetem coleta e preço de Camaçari não recebe tabela de Salvador", async () => {

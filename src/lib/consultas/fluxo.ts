@@ -59,6 +59,7 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
   // Dúvidas têm prioridade sobre a coleta, sem apagar os dados já informados.
   if (informativa && /cama[çc]ari|semerge|falta de ar|dor no peito|socorro|urg[eê]ncia|atendente|humano/iu.test(texto)) return null;
   if (informativa) {
+    const emAndamento = Boolean(d && d.etapa !== "encerrado");
     d ??= { id: randomUUID(), etapa: "dados", opcoes: [], paciente: {} };
     const respostas: string[] = [];
     if (duvidas.valor) respostas.push(valorConsulta);
@@ -66,8 +67,18 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
     if (duvidas.horarios) {
       const opcoes = (await porta.vagas()).filter(v => v.disponivel).slice(0, 6);
       // Informar vagas preserva uma escolha anterior e o cadastro em andamento.
-      if (!d.horario && opcoes.length) { d.opcoes = opcoes; d.etapa = "horario"; }
-      respostas.push(menu(opcoes));
+      if (d.etapa === "horario") d.opcoes = opcoes;
+      else if (!emAndamento && opcoes.length) { d.opcoes = opcoes; d.etapa = "horario"; }
+      const informacaoVagas = menu(opcoes);
+      respostas.push(emAndamento && d.etapa !== "horario" && opcoes.length
+        ? informacaoVagas.slice(0, informacaoVagas.lastIndexOf("\n\n")) : informacaoVagas);
+    }
+    if (emAndamento) {
+      const retomada = d.etapa === "dados" ? perguntaDados(d.paciente)
+        : d.etapa === "local" ? perguntaLocal
+        : d.etapa === "conferencia" ? "Os dados e o horário apresentados estão corretos? Responda confirmo ou corrigir."
+        : d.etapa === "horario" && !duvidas.horarios ? "Qual dos horários apresentados você prefere?" : null;
+      if (retomada) respostas.push("Retomando seu agendamento: " + retomada);
     }
     return responder(respostas.join("\n\n"));
   }
