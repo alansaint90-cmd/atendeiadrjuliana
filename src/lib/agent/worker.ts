@@ -21,6 +21,7 @@ import { pausaManualAtiva, pausarTransferencia } from "./pausa";
 import { transferirAtendimento } from "../operacao/transferir";
 import { cadastroDaConversa } from "../consultas/fluxo-servidor";
 import { deveAguardarResposta } from "./espera";
+import { ativacaoValida } from "./ativacao";
 
 const streamResult = z.array(z.tuple([z.string(), z.array(z.tuple([z.string(), z.array(z.string())]))]));
 let started = false;
@@ -122,7 +123,9 @@ export async function runAgentTick(substituicoes: Partial<typeof dependenciasPad
       const instancia = job.instance ?? settings.EVOLUTION_INSTANCE_NAME ?? "";
       const chatbot = settingsDaInstancia(settings, instancia) ? await dependencies.chatbot(instancia) : null;
       const config = configurarAgente(settingsDaInstancia(settings, instancia), chatbot);
-      if (!config.success) { await followups.finish(job, "cancelado"); return; }
+      if (!config.success || !await ativacaoValida(client, job.conversation, config.data.AI_ACTIVATION_TRIGGER)) {
+        await followups.finish(job, "cancelado"); return;
+      }
       const followupConfig = followupDaInstancia(settings, instancia);
       await processFollowup(job, followupConfig, {
         save: followups.save, finish: result => followups.finish(job, result),
@@ -134,6 +137,7 @@ export async function runAgentTick(substituicoes: Partial<typeof dependenciasPad
           return current.success && JSON.stringify(current.data) === JSON.stringify(config.data)
             && configuracaoPermiteFollowup(job, currentFollowup)
             && currentFollowup.instance === config.data.EVOLUTION_INSTANCE_NAME
+            && await ativacaoValida(client, job.conversation, current.data.AI_ACTIVATION_TRIGGER)
             && !await pausaManualAtiva(client, job.conversation)
             && await client.get(agentKeys.lock) === token && await client.xlen(streamKey) === 0;
         },

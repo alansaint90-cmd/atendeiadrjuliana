@@ -4,6 +4,7 @@ import type { IncomingMessage } from "./message";
 import type { DeliveryState } from "./processor";
 import type { Turn } from "./providers";
 import { streamKey } from "../evolution/queue";
+import { autorizarAtivacao } from "./ativacao";
 
 const retention = 30 * 86400;
 const nameRetention = 100 * 86400;
@@ -12,6 +13,7 @@ export function messageStore(client: Redis, token: string, message: IncomingMess
   const historyKey = `atendeia:{evolution}:history:${message.conversation}`;
   const nameKey = `atendeia:{evolution}:name:${message.conversation}`;
   return {
+    autorizarAtivacao: (gatilho: string) => autorizarAtivacao(client, token, message, gatilho),
     async contactName(): Promise<string | null> {
       return client.get(nameKey);
     },

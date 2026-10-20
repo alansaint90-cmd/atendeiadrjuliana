@@ -15,6 +15,7 @@ export interface ProcessingPort {
   rememberName?(name: string): Promise<void>;
   complete(state: DeliveryState, turns: Turn[]): Promise<void>;
   enabled(): Promise<boolean>;
+  autorizarAtivacao?(gatilho: string): Promise<boolean>;
   transcribe?(config: AgentConfig, message: IncomingMessage): Promise<string>;
   transferir?(destino: string): Promise<void>;
   cadastroConsulta?(texto: string, iniciar: boolean): Promise<string | null>;
@@ -32,6 +33,7 @@ export async function processMessage(message: IncomingMessage, config: AgentConf
     return "incerta";
   }
   if (!await port.enabled()) return "pausada";
+  if (config.AI_ACTIVATION_TRIGGER && !await port.autorizarAtivacao?.(config.AI_ACTIVATION_TRIGGER)) return "aguardando_gatilho";
   const configHash = digest(JSON.stringify(config));
   const revisao = digest(config.AI_SYSTEM_PROMPT);
   if (state?.configHash !== configHash) {

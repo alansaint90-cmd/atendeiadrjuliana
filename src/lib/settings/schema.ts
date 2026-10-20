@@ -7,6 +7,7 @@ export const settingsSchema = z.object({
   FOLLOW_UP_SECOND_CONFIG: z.string().max(20000).refine(value => { try { parseFollowup(value); return true; } catch { return false; } }, "Configuração de follow-up inválida.").optional(),
   FOLLOW_UP_THIRD_CONFIG: z.string().max(20000).refine(value => { try { parseFollowup(value); return true; } catch { return false; } }, "Configuração de follow-up inválida.").optional(),
   AI_ENABLED: z.enum(["true", "false"]).optional(),
+  AI_ACTIVATION_TRIGGER: z.string().trim().min(1).max(2000).regex(/^[^\x00-\x1f]+$/u).optional(),
   AI_SYSTEM_PROMPT: z.string().trim().min(1).max(200000).optional(), // legado: apenas leitura de registros antigos
   OPENAI_API_KEY: secret.regex(/^sk-[A-Za-z0-9_-]+$/).optional(),
   OPENAI_MODEL: z.string().trim().min(1).max(100).regex(/^[A-Za-z0-9_.:-]+$/).optional(),
