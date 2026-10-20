@@ -4,6 +4,7 @@ import { digest } from "./message";
 import { ProviderError, type Turn, type RespostaGerada } from "./providers";
 import { extrairNomeInformado, instrucoesComNome, respostaComNome, personaDoAgente, mesmoNome, removerRotuloDaPersona } from "./nome";
 import { deveConsultarAgenda } from "../consultas/intencao";
+import { correspondeAoGatilho } from "./ativacao";
 import { mensagensDaConsulta } from "../consultas/fluxo";
 
 export interface DeliveryState { status: "gerando" | "gerada" | "enviando" | "enviada" | "incerta" | "falhou"; attempts: number; reply?: string; partes?: string[]; providerIds?: string[]; transcript?: string; code?: string; configHash?: string; providerId?: string; transferencia?: boolean; consulta?: boolean }
@@ -72,13 +73,13 @@ export async function processMessage(message: IncomingMessage, config: AgentConf
       const confirmadoNoHistorico = historico.some(turno => turno.role === "user" && mesmoNome(extrairNomeInformado(turno.content, []), salvo));
       const nome = informado ?? (mesmoNome(salvo, persona) && !confirmadoNoHistorico ? null : salvo);
       if (informado && port.rememberName) await port.rememberName(informado);
-      const instrucoes = `${instrucoesComNome(config.AI_SYSTEM_PROMPT, nome, historico.length === 0)}\nNão use o nome da assistente como rótulo ou prefixo das mensagens. Preserve a apresentação natural no início da conversa.`;
+      const instrucoes = `${instrucoesComNome(config.AI_SYSTEM_PROMPT, nome, historico.length === 0)}\nResponda primeiro à pergunta atual do cliente, de forma direta e objetiva. Não condicione informações sobre valor, pagamento, endereço da clínica, atendimento ou disponibilidade ao preenchimento do cadastro. Depois de esclarecer a dúvida, só retome o agendamento se o cliente quiser. Não repita perguntas de cadastro no lugar da resposta solicitada. Não use o nome da assistente como rótulo ou prefixo das mensagens. Preserve a apresentação natural no início da conversa.`;
       // Preservar o histórico armazenado, mas não ensinar novamente uma persona ou roteiro antigo.
       const contextoAtual = persona ? historico.filter(turno => turno.role === "user" || turno.revisao === revisao) : historico;
       const saudacao = /^(?:oi+|ol[aá]+|bom dia|boa tarde|boa noite)[\s!.😊👋]*$/iu.test((transcript ?? message.text).trim());
-      if (!nome && !historico.length && !message.midia && saudacao && config.openingMessages?.length) partes = config.openingMessages;
-      let cadastro = config.agendaConsultas && port.cadastroConsulta ? await port.cadastroConsulta(transcript ?? message.text, false) : null;
-      if (!cadastro && config.agendaConsultas && port.cadastroConsulta && deveConsultarAgenda(transcript ?? message.text, historico)) {
+      if (!historico.length && !message.midia && ((!nome && saudacao) || Boolean(config.AI_ACTIVATION_TRIGGER && correspondeAoGatilho(message, config.AI_ACTIVATION_TRIGGER))) && config.openingMessages?.length) partes = config.openingMessages;
+      let cadastro = !partes && config.agendaConsultas && port.cadastroConsulta ? await port.cadastroConsulta(transcript ?? message.text, false) : null;
+      if (!partes && !cadastro && config.agendaConsultas && port.cadastroConsulta && deveConsultarAgenda(transcript ?? message.text, historico)) {
         cadastro = await port.cadastroConsulta(transcript ?? message.text, true);
       }
       const gerada = cadastro ?? (partes ? partes.join("\n\n") : message.midia && config.atendimento?.transferMedia ? { transferir: true as const }

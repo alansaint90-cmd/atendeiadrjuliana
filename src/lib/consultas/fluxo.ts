@@ -6,6 +6,17 @@ import { HORARIOS_CONSULTA } from "./calendario";
 import { camposPendentes, perguntaDados, perguntaIdentificacao, perguntaLocal, normalizarCampo, type CampoPaciente } from "./coleta";
 
 const campos = ["nomeCompleto", "telefone", "nascimento", "cep", "rua", "numero", "complemento", "bairro", "cidade"] as const;
+const normalizarPergunta = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+function informacoesSolicitadas(texto: string) {
+  const t = normalizarPergunta(texto);
+  return {
+    valor: /\b(?:valor|preco|custo|investimento|pagamento|pix|cartao|parcelamento)\b|quanto (?:custa|e|fica)/u.test(t),
+    endereco: /(?:qual|onde|saber|informa|manda|passa|envia).*(?:endereco|localizacao|clinica|consultorio)|(?:endereco|localizacao).*(?:clinica|consultorio|bonvida|hospital)|como (?:chegar|chego)/u.test(t),
+    horarios: /(?:horarios?|vagas?).*(?:disponiveis|disponivel|livres?|atendimento)|(?:quais|qual|saber|ver|consultar|tem|informa|manda|passa).*(?:horarios?|vagas?)|dias? de atendimento/u.test(t),
+  };
+}
+const valorConsulta = "O valor da consulta com a Dra. Juliana em Salvador é R$ 400,00 à vista ou no Pix. No cartão, R$ 430,00, em até 2x de R$ 215,00. Inclui retorno em até 30 dias e fornecemos nota fiscal.";
+const enderecoClinica = "Clínica Bonvida — Av. Professor Magalhães Neto, nº 1541, Bloco A, 7º andar, sala 7024. Centro Médico do Hospital da Bahia, Pituba, Salvador/BA.";
 const avisoChegada = "Chegue 20 minutos antes para fazer o cadastro presencial e agilizar seu atendimento.";
 const contatoCamacari = "Em Camaçari, a Dra. Juliana atende no Hospital SEMERGE. Para agendar, fale diretamente pelo WhatsApp: (71) 3621-4575.\nhttps://api.whatsapp.com/send?phone=557136214575\nO hospital confirma os horários e as condições da consulta.";
 export interface CadastroConsulta { id: string; etapa: "horario" | "dados" | "local" | "conferencia" | "encerrado"; opcoes: HorarioConsulta[]; local?: "salvador";
@@ -37,12 +48,29 @@ function resumo(d: CadastroConsulta) {
 export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId: string, texto: string, iniciar = false): Promise<string | null> {
   let d = await porta.ler();
   if (d?.ultimaMensagem === mensagemId && d.ultimaResposta) return d.ultimaResposta;
-  if ((!d || d.etapa === "encerrado") && !iniciar) return null;
+  const duvidas = informacoesSolicitadas(texto);
+  const informativa = Object.values(duvidas).some(Boolean);
+  if ((!d || d.etapa === "encerrado") && !iniciar && !informativa) return null;
   if (!await porta.ativo()) throw new Error("Cadastro pausado.");
   const responder = async (resposta: string) => {
     if (!await porta.ativo()) throw new Error("Cadastro pausado.");
     await porta.salvar({ ...d!, ultimaMensagem: mensagemId, ultimaResposta: resposta }); return resposta;
   };
+  // Dúvidas têm prioridade sobre a coleta, sem apagar os dados já informados.
+  if (informativa && /cama[çc]ari|semerge|falta de ar|dor no peito|socorro|urg[eê]ncia|atendente|humano/iu.test(texto)) return null;
+  if (informativa) {
+    d ??= { id: randomUUID(), etapa: "dados", opcoes: [], paciente: {} };
+    const respostas: string[] = [];
+    if (duvidas.valor) respostas.push(valorConsulta);
+    if (duvidas.endereco) respostas.push(enderecoClinica);
+    if (duvidas.horarios) {
+      const opcoes = (await porta.vagas()).filter(v => v.disponivel).slice(0, 6);
+      // Informar vagas preserva uma escolha anterior e o cadastro em andamento.
+      if (!d.horario && opcoes.length) { d.opcoes = opcoes; d.etapa = "horario"; }
+      respostas.push(menu(opcoes));
+    }
+    return responder(respostas.join("\n\n"));
+  }
   if (!d || d.etapa === "encerrado") {
     d = { id: randomUUID(), etapa: "dados", opcoes: [], paciente: {} };
     // Pedidos explícitos de disponibilidade continuam recebendo vagas reais imediatamente.
@@ -114,6 +142,7 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
   }
   if (!porta.extrair) throw new Error("Extração de cadastro indisponível.");
   const extraidos = await porta.extrair(entrada, [...campos]);
+  if (!Object.values(extraidos).some(valor => valor !== undefined && valor !== "")) return null;
   let erro = "";
   for (const campo of campos) {
     if (extraidos[campo] === undefined) continue;

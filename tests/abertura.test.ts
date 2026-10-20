@@ -84,3 +84,15 @@ test("mudança de configuração após primeiro balão não reinicia a abertura"
   assert.equal(await processMessage(mensagem, { ...config, openingMessages: ["Nova abertura"] }, f.port), "falhou");
   assert.deepEqual(f.envios, [abertura[0]]);
 });
+
+test("gatilho do anúncio recebe dois balões de abertura antes do cadastro", async () => {
+  const f = fixture();
+  const gatilho = "Olá, gostaria de agendar uma consulta com Dra Juliana Matos, pneumologista";
+  const resultado = await processMessage({ ...mensagem, text: gatilho }, { ...config, AI_ACTIVATION_TRIGGER: gatilho, agendaConsultas: true }, {
+    ...f.port, autorizarAtivacao: async () => true,
+    cadastroConsulta: async () => { throw Error("Abertura deve vir antes do cadastro"); },
+    generate: async () => { throw Error("Usar abertura literal"); },
+  });
+  assert.equal(resultado, "enviada");
+  assert.deepEqual(f.envios, abertura);
+});

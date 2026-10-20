@@ -32,7 +32,7 @@ test("oferece somente vagas de quinta e entende horário com pergunta sem sair d
     assert.doesNotMatch(mensagens[1], /Qual desses/);
     assert.match(mensagens[2], /^Qual desses horários você prefere\?/u);
     assert.doesNotMatch(menu!, /informe outra data|dia específico|aguarde/i);
-    assert.equal(await conduzirCadastro(porta, "preco", "Quanto custa?"), null);
+    assert.match((await conduzirCadastro(porta, "preco", "Quanto custa?"))!, /400,00/);
     assert.match((await conduzirCadastro(porta, "escolha", escolha))!, /nome completo/);
     const salvo = await porta.ler(); assert.equal(salvo?.horario?.id, vagas[5].id);
   }
