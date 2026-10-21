@@ -48,3 +48,31 @@ test("não mostra convite nem retorno ao painel", () => {
   expect(screen.queryByText(/primeiro acesso com convite/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/voltar ao painel/i)).not.toBeInTheDocument();
 });
+
+test("oferece link para primeiro acesso e formulário com convite", () => {
+  const { unmount } = render(<FormularioLogin />);
+  expect(screen.getByRole("link", { name: "Primeiro acesso", exact: true })).toHaveAttribute("href", "/entrar/primeiro-acesso");
+  unmount();
+  render(<FormularioLogin primeiroAcesso />);
+  expect(screen.getByLabelText("Código de primeiro acesso")).toBeInTheDocument();
+  expect(screen.getByLabelText("Nova senha")).toHaveAttribute("autocomplete", "new-password");
+});
+test("primeiro acesso impede senhas diferentes sem enviar credenciais", async () => {
+  const pedido = vi.spyOn(globalThis, "fetch");
+  render(<FormularioLogin primeiroAcesso />);
+  fireEvent.change(screen.getByLabelText("Código de primeiro acesso"), { target: { value: "a".repeat(43) } });
+  fireEvent.change(screen.getByLabelText("Nova senha"), { target: { value: "senha ficticia de teste" } });
+  fireEvent.change(screen.getByLabelText("Confirmar senha", { exact: true }), { target: { value: "outra senha ficticia" } });
+  fireEvent.click(screen.getByRole("button", { name: "Definir senha e acessar" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("As senhas não coincidem.");
+  expect(pedido).not.toHaveBeenCalled();
+});
+test("primeiro acesso envia convite ao endpoint existente e limpa campos após sucesso", async () => {
+  const pedido = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true } as Response);
+  render(<FormularioLogin primeiroAcesso />);
+  fireEvent.change(screen.getByLabelText("Código de primeiro acesso"), { target: { value: "a".repeat(43) } });
+  for (const label of ["Nova senha", "Confirmar senha"]) fireEvent.change(screen.getByLabelText(label, { exact: true }), { target: { value: "senha ficticia de teste" } });
+  fireEvent.click(screen.getByRole("button", { name: "Definir senha e acessar" }));
+  expect(pedido).toHaveBeenCalledWith("/api/auth/passkey", expect.objectContaining({ method: "POST", body: JSON.stringify({ acao: "concluir_registro_senha", convite: "a".repeat(43), senha: "senha ficticia de teste" }) }));
+  await vi.waitFor(() => expect(screen.getByLabelText("Nova senha")).toHaveValue(""));
+});

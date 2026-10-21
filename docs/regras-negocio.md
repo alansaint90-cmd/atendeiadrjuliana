@@ -155,3 +155,5 @@
 Dúvidas sobre preço, pagamento, endereço da clínica e disponibilidade têm prioridade sobre a coleta de dados do paciente em qualquer etapa. O fluxo responde diretamente, consulta vagas reais e preserva os dados já informados. Mensagens sem dados de cadastro voltam ao agente para esclarecimento, sem repetir automaticamente a pergunta pendente.
 
 Após esclarecer uma dúvida durante um cadastro em andamento, retomar a etapa pendente na mesma resposta, depois da informação solicitada. Preservar nome, nascimento, endereço e horário já informados; consultar disponibilidade não reinicia nem adianta etapas do cadastro.
+
+A tela /entrar oferece o link Primeiro acesso para /entrar/primeiro-acesso. O formulário usa o convite de 15 minutos e a operação existente concluir_registro_senha, com confirmação de senha de pelo menos 15 caracteres. Não altera validação de convite, política de senhas, limites nem criação de sessão do servidor.

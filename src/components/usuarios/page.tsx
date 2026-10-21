@@ -41,7 +41,7 @@ export function UsuariosPage({ papel }: { papel: Papel }) {
   return <section className="page-stack"><div className="page-head"><div><h1>Equipe e usuários</h1><p>Gerencie os acessos individuais da sua equipe.</p></div></div>
     {erro && <p role="alert">{erro}</p>}
     {!itens && !erro && <p role="status">{ocupado ? "Carregando usuários…" : "Aguardando a consulta dos usuários."}</p>}
-    {codigo && <article className="panel"><h2>Convite criado</h2><p>Entregue este código à pessoa por um canal privado. Em /entrar, ela deve escolher Primeiro acesso, definir a senha e cadastrar a passkey. Expira em 15 minutos.</p>
+    {codigo && <article className="panel"><h2>Convite criado</h2><p>Entregue este código à pessoa por um canal privado. Na tela de entrada, ela deve escolher Primeiro acesso e definir a própria senha. Expira em 15 minutos.</p>
       <label>Código de primeiro acesso<input readOnly value={codigo} /></label><button onClick={() => setCodigo("")}>Ocultar código</button></article>}
     {itens && <article className="panel"><button className="primary" disabled={ocupado} onClick={() => editar(null)}>Novo usuário</button>
       {!itens.length && <p>Nenhum usuário cadastrado.</p>}
@@ -59,7 +59,7 @@ export function UsuariosPage({ papel }: { papel: Papel }) {
       <button type="button" disabled={ocupado} onClick={() => setFormulario(false)}>Cancelar</button>
     </form>}
     <ModalConfirmacaoBlock aberto={confirmar !== null} titulo={confirmar === "reiniciar" ? "Reiniciar acesso" : "Salvar usuário"}
-      mensagem={confirmar === "reiniciar" ? "A conta ficará inativa, as sessões e passkeys serão revogadas. O usuário terá 15 minutos para cadastrar nova senha e passkey pelo convite." : "Confirma a alteração de acesso deste usuário?"}
+      mensagem={confirmar === "reiniciar" ? "A conta ficará inativa, as sessões e passkeys serão revogadas. O usuário terá 15 minutos para cadastrar nova senha pelo convite." : "Confirma a alteração de acesso deste usuário?"}
       carregando={ocupado} onCancelar={() => setConfirmar(null)} onConfirmar={() => void salvar()} />
   </section>;
 }
