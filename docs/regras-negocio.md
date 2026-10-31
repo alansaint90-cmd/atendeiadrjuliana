@@ -157,3 +157,5 @@ Dúvidas sobre preço, pagamento, endereço da clínica e disponibilidade têm p
 Após esclarecer uma dúvida durante um cadastro em andamento, retomar a etapa pendente na mesma resposta, depois da informação solicitada. Preservar nome, nascimento, endereço e horário já informados; consultar disponibilidade não reinicia nem adianta etapas do cadastro.
 
 A tela /entrar oferece o link Primeiro acesso para /entrar/primeiro-acesso. O formulário usa o convite de 15 minutos e a operação existente concluir_registro_senha, com confirmação de senha de pelo menos 15 caracteres. Não altera validação de convite, política de senhas, limites nem criação de sessão do servidor.
+
+Oferta de vagas de Salvador: ordenar as datas da mais próxima à mais distante e, dentro de cada data, os horários em ordem decrescente (11h20 até 08h), sem mudar a grade de 40 minutos. Preservar escolhas explícitas do cliente; a prioridade de oferta não realiza reservas por conta própria.

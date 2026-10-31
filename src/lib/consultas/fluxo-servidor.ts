@@ -5,7 +5,7 @@ import { db } from "../db/client";
 import { systemUserId } from "../db/bootstrap";
 import { conduzirCadastro, type CadastroConsulta } from "./fluxo";
 import { consultarHorarios, reservarConsulta } from "./repository";
-import { proximasQuintas } from "./calendario";
+import { proximasQuintas, ordenarVagasParaOferta } from "./calendario";
 import type { HorarioConsulta } from "./schema";
 import type { AgentConfig } from "../agent/config";
 import { extrairCamposCadastro } from "./extracao";
@@ -27,7 +27,7 @@ export function cadastroDaConversa(client: Redis, token: string, mensagem: Incom
         vagas.push(...(await consultarHorarios(db(), dia)).filter(v => v.disponivel && (!depoisDe || v.inicio > depoisDe)));
         if (vagas.length >= 6) break;
       }
-      return vagas.slice(0, 6);
+      return ordenarVagasParaOferta(vagas).slice(0, 6);
     },
     reservar: (dados, identidade) => reservarConsulta(db(), dados, { instancia, origem: mensagem.conversation,
       identidade: `whatsapp:${mensagem.conversation}:${identidade}`, autor: systemUserId }),

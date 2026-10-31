@@ -20,3 +20,9 @@ export function proximasQuintas(agora = Date.now(), quantidade = 8) {
   data.setUTCDate(data.getUTCDate() + (4 - data.getUTCDay() + 7) % 7);
   return Array.from({ length: quantidade }, (_, indice) => new Date(data.getTime() + indice * 7 * 86400000).toISOString().slice(0, 10));
 }
+
+// Datas mais próximas primeiro; dentro de cada dia, últimos horários primeiro.
+export function ordenarVagasParaOferta<T extends { inicio: string }>(vagas: T[]): T[] {
+  const dia = (inicio: string) => new Date(inicio).toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+  return [...vagas].sort((a, b) => dia(a.inicio).localeCompare(dia(b.inicio)) || Date.parse(b.inicio) - Date.parse(a.inicio));
+}
