@@ -20,7 +20,7 @@
   "transferHuman": false,
   "destination": "Atendimento humano",
   "transferNotice": "",
-  "closingPhrase": "Ficamos à disposição.",
+  "closingPhrase": "Se precisar de algo mais, é só chamar",
   "flows": [],
   "temperature": 0.2,
   "contextRevision": "239d5eaa-c1fb-403d-925c-4aea43bf00c5",

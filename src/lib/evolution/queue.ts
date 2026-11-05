@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import Redis from "ioredis";
 import type { EvolutionEvent } from "./schema";
-import { duracaoPausaManual, pausaManualKey, pausasManuaisParaEvento } from "../agent/pausa";
+import { duracaoPausaManual, pausaManualKey, estadoManualKey, pausasManuaisParaEvento } from "../agent/pausa";
 
 export const streamKey = "atendeia:{evolution}:events";
 // Atomic deduplication and enqueue. Capacity failures never silently discard data.
@@ -12,11 +12,17 @@ redis.call('XADD', KEYS[1], '*', 'payload', ARGV[1])
 redis.call('SET', KEYS[2], '1', 'EX', 86400)
 local pausas = cjson.decode(ARGV[2])
 for indice, pausa in ipairs(pausas) do
-  local chave = 3 + (indice - 1) * 4
+  local chave = 3 + (indice - 1) * 5
   if tonumber(pausa.ate) > tonumber(ARGV[3]) and redis.call('EXISTS', KEYS[chave + 1]) == 0 then
-    local anterior = tonumber(redis.call('GET', KEYS[chave]) or '0')
-    if tonumber(pausa.ate) > anterior then
-      redis.call('SET', KEYS[chave], pausa.ate, 'PXAT', pausa.ate)
+    local instante = tonumber(pausa.ate) - ${duracaoPausaManual}
+    local anterior = math.max(tonumber(redis.call('GET', KEYS[chave + 4]) or '0'), tonumber(redis.call('GET', KEYS[chave]) or '${duracaoPausaManual}') - ${duracaoPausaManual})
+    if instante >= anterior then
+      if pausa.retomar then
+        redis.call('DEL', KEYS[chave])
+      else
+        redis.call('SET', KEYS[chave], pausa.ate, 'PXAT', pausa.ate)
+      end
+      redis.call('SET', KEYS[chave + 4], instante, 'EX', 86400)
     end
     local ciclo = redis.call('GET', KEYS[chave + 2])
     if ciclo and cjson.decode(ciclo).started <= tonumber(pausa.ate) - ${duracaoPausaManual} then
@@ -55,9 +61,9 @@ export async function enqueueEvolutionEventWithClient(client: Redis, event: Evol
   const payload = JSON.stringify({ ...event, receivedAt: new Date().toISOString(), source: "evolution-webhook" });
   const pausas = await pausasManuaisParaEvento(client, event);
   const chaves = pausas.flatMap(pausa => [pausaManualKey(pausa.conversation), pausa.outgoingKey,
-    `atendeia:{evolution}:followup:${pausa.conversation}`, "atendeia:{evolution}:followups"]);
+    `atendeia:{evolution}:followup:${pausa.conversation}`, "atendeia:{evolution}:followups", estadoManualKey(pausa.conversation)]);
   const result = await client.eval(enqueueScript, 2 + chaves.length, streamKey, `atendeia:{evolution}:dedupe:${fingerprint}`,
-    ...chaves, payload, JSON.stringify(pausas.map(pausa => ({ ate: pausa.ate, conversation: pausa.conversation }))), Date.now());
+    ...chaves, payload, JSON.stringify(pausas.map(pausa => ({ ate: pausa.ate, conversation: pausa.conversation, retomar: pausa.retomar }))), Date.now());
   if (result === -1) throw new Error("Queue capacity reached");
   if (result !== 0 && result !== 1) throw new Error("Unexpected queue response");
   return result === 1 ? "queued" : "duplicate";

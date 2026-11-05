@@ -5,6 +5,12 @@ import { z } from "zod";
 import { digest } from "./message";
 import { agentKeys, owned, assertResult } from "./redis";
 
+export const fraseRetornoManual = "Se precisar de algo mais, é só chamar";
+const normalizarEncerramento = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[.,!?;:]/g, " ").replace(/\s+/g, " ").trim();
+export function encerraPausaManual(texto: string) {
+  return normalizarEncerramento(texto) === normalizarEncerramento(fraseRetornoManual);
+}
+export const estadoManualKey = (conversa: string) => "atendeia:{evolution}:manual-state:" + conversa;
 export const duracaoPausaManual = 30 * 60 * 1000;
 export async function pausarTransferencia(client: Redis, token: string, conversa: string, agora = Date.now()) {
   await assertResult(await client.eval(owned + `
@@ -20,15 +26,18 @@ const aliasKey = (conversation: string) => `atendeia:{evolution}:contact-alias:$
 const endereco = /^(?:[1-9]\d{6,14}@s\.whatsapp\.net|\d{1,30}@lid)$/;
 const eventoManualSchema = z.object({ key: z.object({ id: z.string().min(1).max(200), fromMe: z.boolean(),
   remoteJid: z.string().regex(endereco), remoteJidAlt: z.string().optional() }),
-  messageTimestamp: z.coerce.number().positive() });
+  messageTimestamp: z.coerce.number().positive(), message: z.unknown().optional() });
+const textoManualSchema = z.object({ conversation: z.string().optional(),
+  extendedTextMessage: z.object({ text: z.string().optional() }).optional() });
 
 export async function pausasManuaisParaEvento(client: Redis, event: EvolutionEvent) {
   if (event.event !== "messages.upsert") return [];
-  const pausas: { conversation: string; ate: number; outgoingKey: string }[] = [];
+  const pausas: { conversation: string; ate: number; outgoingKey: string; retomar: boolean }[] = [];
   for (const item of Array.isArray(event.data) ? event.data : [event.data]) {
     const parsed = eventoManualSchema.safeParse(item);
     if (!parsed.success || parsed.data.messageTimestamp * 1000 > Date.now() + 60000) continue;
     const { key, messageTimestamp } = parsed.data;
+    const mensagem = textoManualSchema.safeParse(parsed.data.message);
     const identificadores = [key.remoteJid, key.remoteJidAlt].filter((jid): jid is string => Boolean(jid && endereco.test(jid)));
     const conversas = identificadores.map(jid => digest(`${event.instance}:${jid}`));
     // Associação explícita recebida da Evolution, nunca converter dígitos de LID em telefone.
@@ -43,6 +52,7 @@ export async function pausasManuaisParaEvento(client: Redis, event: EvolutionEve
     }
     for (const conversation of new Set(conversas)) pausas.push({ conversation,
       ate: messageTimestamp * 1000 + duracaoPausaManual,
+      retomar: mensagem.success && encerraPausaManual(mensagem.data.conversation ?? mensagem.data.extendedTextMessage?.text ?? ""),
       outgoingKey: `atendeia:{evolution}:outgoing:${digest(`${event.instance}:${key.id}`)}` });
   }
   return pausas;
