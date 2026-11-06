@@ -25,13 +25,13 @@ test("interpreta datas, horários e opções digitados ou ditados sem exigir bar
   assert.ok(interpretarEscolha("às oito ou às nove", agora).erro);
   assert.ok(interpretarEscolha("quinta da semana que vem às oito", agora).erro);
 });
-test("áudio transcrito percorre o cadastro real e entende nascimento por extenso", async () => {
+test("áudio transcrito percorre o cadastro real e entende idade por extenso", async () => {
   let cadastro: CadastroConsulta = { id: "cadastro", etapa: "dados", paciente: {}, opcoes: [] };
   let entrega: DeliveryState | null = null;
-  const transcricao = "Maria Exemplo, dezessete de dezembro de mil novecentos e noventa";
+  const transcricao = "Maria Exemplo, trinta e seis anos";
   const porta: PortaCadastroConsulta = { ativo: async () => true, ler: async () => cadastro,
     salvar: async d => { cadastro = d; }, vagas: async () => [], reservar: async () => { throw new Error("Não reservar"); },
-    extrair: async texto => { assert.equal(texto, transcricao); return { nomeCompleto: "Maria Exemplo", nascimento: "dezessete de dezembro de mil novecentos e noventa" }; } };
+    extrair: async texto => { assert.equal(texto, transcricao); return { nomeCompleto: "Maria Exemplo", idade: "trinta e seis anos" }; } };
   const config: AgentConfig = { AI_ENABLED: "true", AI_SYSTEM_PROMPT: "Atendimento de testes", agendaConsultas: true,
     OPENAI_API_KEY: "sk-test-only", OPENAI_MODEL: "gpt-4.1-mini", EVOLUTION_API_KEY: "teste", EVOLUTION_API_URL: "https://example.com",
     EVOLUTION_INSTANCE_NAME: "teste", REDIS_URL: "redis://localhost:6379" };
@@ -41,7 +41,7 @@ test("áudio transcrito percorre o cadastro real e entende nascimento por extens
     generate: async () => { throw new Error("Não delegar dados ao prompt"); }, send: async (_config, _numero, texto) => { assert.match(texto, /endereço completo/); return "envio-mock"; },
   });
   assert.equal(resultado, "enviada");
-  assert.equal(cadastro.paciente.nascimento, "1990-12-17");
+  assert.equal(cadastro.paciente.idade, "36");
 });
 test("nascimento falado é normalizado e data impossível tem erro compreensível", () => {
   assert.equal(normalizarCampo("nascimento", "dezessete de dezembro de mil novecentos e noventa"), "1990-12-17");

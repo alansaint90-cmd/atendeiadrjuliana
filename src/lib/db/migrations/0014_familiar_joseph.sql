@@ -1,0 +1,3 @@
+ALTER TABLE "atendeia_agenda_horarios_reservas" ALTER COLUMN "nascimento" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "atendeia_agenda_horarios_reservas" ADD COLUMN "idade" integer;--> statement-breakpoint
+ALTER TABLE "atendeia_agenda_horarios_reservas" ADD CONSTRAINT "atendeia_agenda_reserva_idade" CHECK (("atendeia_agenda_horarios_reservas"."idade" IS NULL OR "atendeia_agenda_horarios_reservas"."idade" BETWEEN 5 AND 120) AND ("atendeia_agenda_horarios_reservas"."idade" IS NOT NULL OR "atendeia_agenda_horarios_reservas"."nascimento" IS NOT NULL));

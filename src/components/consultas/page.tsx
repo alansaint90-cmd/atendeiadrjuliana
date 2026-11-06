@@ -63,7 +63,7 @@ export function ConsultasPage({ ativoNaTela }: ConsultasPageProps) {
       <h2>Consultas do dia</h2>{!dados.consultas.length && <p className="feature-empty">Nenhuma consulta registrada neste dia.</p>}
       <div className="table"><table><thead><tr><th>Horário</th><th>Paciente</th><th>Contato</th><th>Status</th><th>Cadastro</th><th>Ação</th></tr></thead>
         <tbody>{dados.consultas.map(c => <tr key={c.id}><td>{formatarConsulta(c.inicio)}</td><td>{c.nomeCompleto}</td><td>{c.telefone || "Não informado"}</td><td>{c.status === "confirmada" ? "Confirmada" : "Cancelada"}</td>
-          <td><details><summary>Ver dados</summary><p>Nascimento: {c.nascimento.split("-").reverse().join("/")}</p>
+          <td><details><summary>Ver dados</summary><p>{c.idade ? `Idade: ${c.idade} anos` : c.nascimento ? `Nascimento (registro anterior): ${c.nascimento.split("-").reverse().join("/")}` : "Idade não informada"}</p>
             <p>{c.rua}, {c.numero} {c.complemento} · {c.bairro} · {c.cidade}{c.uf ? `/${c.uf}` : ""}{c.cep ? ` · CEP ${c.cep}` : ""}</p><small>Protocolo: {c.id}</small></details></td>
           <td>{c.status === "confirmada" && <button className="secondary" disabled={ocupado} onClick={() => setConfirmacao(c)}>Cancelar consulta</button>}</td></tr>)}</tbody></table></div></>}
     </article><ModalConfirmacaoBlock aberto={confirmacao !== null} titulo={confirmacao === "reserva" ? "Confirmar consulta" : "Cancelar consulta"}

@@ -18,7 +18,7 @@ test("consulta exige cadastro completo, conferência e confirmação bloqueada p
   expect(screen.getByLabelText(/Telefone para contato/)).not.toBeRequired();
   expect(screen.getByLabelText(/CEP/)).not.toBeRequired();
   expect(screen.queryByLabelText("UF")).not.toBeInTheDocument();
-  const valores = { "Nome completo do paciente": "Paciente Exemplo", "Data de nascimento": "1990-02-20",
+  const valores = { "Nome completo do paciente": "Paciente Exemplo", "Idade (anos)": "36",
     "Rua ou avenida": "Rua Teste", "Número": "10", "Bairro": "Bairro Teste", "Cidade": "Salvador" };
   for (const [nome, value] of Object.entries(valores)) fireEvent.change(screen.getByLabelText(nome, { exact: false }), { target: { value } });
   fireEvent.click(screen.getByLabelText("Conferi os dados do paciente e o horário."));

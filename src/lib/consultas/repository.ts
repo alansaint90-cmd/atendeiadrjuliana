@@ -10,7 +10,7 @@ import { horariosDoDia, dataConsultaSchema } from "./calendario";
 import { identidadeConsultaSchema, instanciaConsultaSchema, reservaConsultaSchema, type HorarioConsulta, type Consulta } from "./schema";
 
 const camposReserva = sql`atendeia_agenda_horarios_reservas.id,horario_id AS "horarioId",instancia,inicio,fim,status,
-  atendeia_agenda_horarios_reservas.updated_at AS "atualizadoEm",nome_completo AS "nomeCompleto",telefone,nascimento,cep,rua,numero,complemento,bairro,cidade,uf`;
+  atendeia_agenda_horarios_reservas.updated_at AS "atualizadoEm",nome_completo AS "nomeCompleto",telefone,nascimento,idade::text AS idade,cep,rua,numero,complemento,bairro,cidade,uf`;
 const relacao = sql`atendeia_agenda_horarios_reservas JOIN atendeia_agenda_horarios ON horario_id=atendeia_agenda_horarios.id`;
 const normalizar = <T extends { inicio: string; fim: string; atualizadoEm: string }>(r: T): T => ({ ...r,
   inicio: new Date(r.inicio).toISOString(), fim: new Date(r.fim).toISOString(), atualizadoEm: new Date(r.atualizadoEm).toISOString() });
@@ -65,8 +65,8 @@ export async function reservarConsulta(banco: BancoSql, entrada: unknown, contex
     const ocupada = linhas(await tx.execute(sql`SELECT id FROM atendeia_agenda_horarios_reservas WHERE horario_id=${dados.horarioId} AND status='confirmada' AND ${vivos(agendaReservas)}`));
     if (ocupada.length) throw new ErroDeNegocio("Esse horário acabou de ser ocupado. Escolha o próximo horário livre.");
     const p = dados.paciente; const id = randomUUID();
-    await tx.execute(sql`INSERT INTO atendeia_agenda_horarios_reservas(id,horario_id,instancia,identidade,origem,nome_completo,telefone,nascimento,cep,rua,numero,complemento,bairro,cidade,uf,modified_by)
-      VALUES(${id},${dados.horarioId},${instancia},${identidade},${origem},${p.nomeCompleto},${p.telefone},${p.nascimento}::date,${p.cep},${p.rua},${p.numero},${p.complemento},${p.bairro},${p.cidade},${p.uf},${autor})`);
+    await tx.execute(sql`INSERT INTO atendeia_agenda_horarios_reservas(id,horario_id,instancia,identidade,origem,nome_completo,telefone,nascimento,idade,cep,rua,numero,complemento,bairro,cidade,uf,modified_by)
+      VALUES(${id},${dados.horarioId},${instancia},${identidade},${origem},${p.nomeCompleto},${p.telefone},${p.nascimento ?? null}::date,${p.idade ? Number(p.idade) : null}::integer,${p.cep},${p.rua},${p.numero},${p.complemento},${p.bairro},${p.cidade},${p.uf},${autor})`);
     await auditar(tx, id, "consulta_confirmada", autor);
     const [reserva] = linhas<Consulta>(await tx.execute(sql`SELECT ${camposReserva} FROM ${relacao} WHERE atendeia_agenda_horarios_reservas.id=${id} AND ${vivos(agendaReservas)} AND ${vivos(agendaHorarios)}`));
     return normalizar(reserva);

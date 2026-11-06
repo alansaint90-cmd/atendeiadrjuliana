@@ -104,13 +104,13 @@ test("WhatsApp coleta além do histórico curto e só reserva após conferência
   const periodo = horariosDoDia(dia())[0];
   const vaga = { id: randomUUID(), ...periodo, atualizadoEm: new Date().toISOString(), disponivel: true };
   const porta: PortaCadastroConsulta = { ler: async () => estado, salvar: async d => { estado = structuredClone(d); }, ativo: async () => ativo,
-    extrair: async (texto, campos) => { assert.ok(!campos.includes("uf")); return texto === "identificação" ? { nomeCompleto: paciente.nomeCompleto, nascimento: "20/02/1990" }
+    extrair: async (texto, campos) => { assert.ok(!campos.includes("uf")); return texto === "identificação" ? { nomeCompleto: paciente.nomeCompleto, idade: "36" }
       : { rua: paciente.rua, numero: paciente.numero, bairro: paciente.bairro, cidade: paciente.cidade, complemento: "perto da praça" }; },
     vagas: async () => [vaga], reservar: async (dados, identidade) => { reservas++; assert.equal(dados.dadosConferidos, true);
       assert.equal(dados.paciente.telefone, ""); assert.equal(dados.paciente.cep, "");
       assert.equal(dados.paciente.uf, "");
       return { ...dados.paciente, id: identidade, horarioId: vaga.id, instancia: "teste", ...periodo, atualizadoEm: new Date().toISOString(), status: "confirmada" }; } };
-  assert.match((await conduzirCadastro(porta, "inicio", "Quero agendar", true))!, /nome completo.*nascimento/);
+  assert.match((await conduzirCadastro(porta, "inicio", "Quero agendar", true))!, /nome completo/);
   const entradas = ["identificação", "endereço", "Salvador", "1"];
   for (let i = 0; i < entradas.length; i++) {
     const resposta = await conduzirCadastro(porta, `dado-${i}`, entradas[i]);
@@ -123,7 +123,7 @@ test("WhatsApp coleta além do histórico curto e só reserva após conferência
       const partes = mensagensDaConsulta(resposta!);
       assert.equal(partes.length, 3);
       assert.equal(partes[0], "Confira os dados antes de agendar.");
-      assert.match(partes[1], /^Nome: Paciente Exemplo\nData de nascimento: 20\/02\/1990/);
+      assert.match(partes[1], /^Nome: Paciente Exemplo\nIdade: 36 anos/);
       assert.match(partes[1], /Endereço:.*\nData da consulta em Salvador:/);
       assert.doesNotMatch(partes[1], /Telefone:|CEP|Confirma pra gente/);
       assert.match(partes[2], /^Os dados e o horário estão corretos\? Confirma pra gente concluir o nosso agendamento\?/);

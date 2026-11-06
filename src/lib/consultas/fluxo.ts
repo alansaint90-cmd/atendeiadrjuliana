@@ -5,7 +5,7 @@ import { interpretarEscolha } from "./escolha";
 import { HORARIOS_CONSULTA } from "./calendario";
 import { camposPendentes, perguntaDados, perguntaIdentificacao, perguntaLocal, normalizarCampo, type CampoPaciente } from "./coleta";
 
-const campos = ["nomeCompleto", "telefone", "nascimento", "cep", "rua", "numero", "complemento", "bairro", "cidade"] as const;
+const campos = ["nomeCompleto", "telefone", "idade", "cep", "rua", "numero", "complemento", "bairro", "cidade"] as const;
 const normalizarPergunta = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 function informacoesSolicitadas(texto: string) {
   const t = normalizarPergunta(texto);
@@ -43,7 +43,7 @@ export function mensagensDaConsulta(resposta: string): string[] {
 }
 function resumo(d: CadastroConsulta) {
   const p = pacienteSchema.parse(d.paciente);
-  return `Confira os dados antes de agendar.\n\nNome: ${p.nomeCompleto}${p.telefone ? `\nTelefone: ${p.telefone}` : ""}\nData de nascimento: ${p.nascimento.split("-").reverse().join("/")}\nEndereço: ${p.rua}, ${p.numero}${p.complemento ? `, referência/complemento: ${p.complemento}` : ""}, ${p.bairro}, ${p.cidade}${p.uf ? `/${p.uf}` : ""}${p.cep ? `, CEP ${p.cep}` : ""}\nData da consulta em Salvador: ${formatarConsulta(d.horario!.inicio)} (horário de Brasília).\n\nOs dados e o horário estão corretos? Confirma pra gente concluir o nosso agendamento? Responda confirmo ou corrigir.`;
+  return `Confira os dados antes de agendar.\n\nNome: ${p.nomeCompleto}${p.telefone ? `\nTelefone: ${p.telefone}` : ""}\nIdade: ${p.idade ? p.idade + " anos" : "já registrada no cadastro anterior"}\nEndereço: ${p.rua}, ${p.numero}${p.complemento ? `, referência/complemento: ${p.complemento}` : ""}, ${p.bairro}, ${p.cidade}${p.uf ? `/${p.uf}` : ""}${p.cep ? `, CEP ${p.cep}` : ""}\nData da consulta em Salvador: ${formatarConsulta(d.horario!.inicio)} (horário de Brasília).\n\nOs dados e o horário estão corretos? Confirma pra gente concluir o nosso agendamento? Responda confirmo ou corrigir.`;
 }
 export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId: string, texto: string, iniciar = false): Promise<string | null> {
   let d = await porta.ler();

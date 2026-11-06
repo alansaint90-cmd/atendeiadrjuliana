@@ -25,14 +25,14 @@ test("respostas parciais preservam campos e Camaçari não consulta nem reserva 
   const porta: PortaCadastroConsulta = { ativo: async () => true, ler: async () => estado, salvar: async d => { estado = d; },
     vagas: async () => { throw new Error("Não consultar Salvador"); }, reservar: async () => { throw new Error("Não reservar Salvador"); },
     extrair: async texto => texto === "nome" ? { nomeCompleto: "Maria Exemplo" }
-      : texto === "data inválida" ? { nascimento: "31/02/1990" }
-      : texto === "data" ? { nascimento: "20/02/1990" }
+      : texto === "data inválida" ? { idade: "4" }
+      : texto === "data" ? { idade: "36" }
       : { rua: "Rua Exemplo", numero: "10", bairro: "Centro", cidade: "Camaçari", uf: "BA" } };
   await conduzirCadastro(porta, "1", "Quero agendar", true);
   const parcial = await conduzirCadastro(porta, "2", "nome");
-  assert.match(parcial!, /nascimento/); assert.doesNotMatch(parcial!, /nome completo/);
+  assert.match(parcial!, /Qual é a sua idade/); assert.doesNotMatch(parcial!, /nome completo/);
   await conduzirCadastro(porta, "3", "data inválida");
-  assert.equal((await porta.ler())?.paciente.nascimento, undefined);
+  assert.equal((await porta.ler())?.paciente.idade, undefined);
   assert.match((await conduzirCadastro(porta, "4", "data"))!, /endereço completo/);
   assert.match((await conduzirCadastro(porta, "5", "endereço"))!, /Salvador ou em Camaçari/);
   assert.equal((await porta.ler())?.paciente.cidade, "Camaçari", "cidade residencial não escolhe a clínica");
