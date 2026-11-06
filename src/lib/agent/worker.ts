@@ -76,7 +76,7 @@ export async function runAgentTick(substituicoes: Partial<typeof dependenciasPad
       let result = "ignorada";
       if (message && config.success) {
         if (!await pausaManualAtiva(client, message.conversation)
-          && deveAguardarResposta(config.data.agendaConsultas, message.timestamp)) return false;
+          && deveAguardarResposta(config.data.delay ?? 5, message.timestamp)) return false;
         const store = messageStore(client, token, message);
         const atendimentoAtivo = async () => {
           const atual = configurarAgente(settingsDaInstancia(await dependencies.settings(), instancia), await dependencies.chatbot(instancia));
@@ -162,8 +162,8 @@ export function startAgentWorker() {
     try { await executarAgendamentos(); }
     catch { console.error("Atende AI: falha ao processar agendamentos; confira banco e configuração."); }
     try { processed = Boolean(await runAgentTick()); }
-    catch { report("falha de configuração, Redis ou processamento; nova tentativa em 5 segundos"); }
-    const timer = setTimeout(() => void loop(), processed ? 100 : 5000);
+    catch { report("falha de configuração, Redis ou processamento; nova tentativa em 1 segundo"); }
+    const timer = setTimeout(() => void loop(), processed ? 100 : 1000);
     timer.unref();
   };
   void loop();

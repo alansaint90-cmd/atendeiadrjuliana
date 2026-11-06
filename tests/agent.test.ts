@@ -384,3 +384,11 @@ test("Evolution recebe texto e telefone corretos; exige confirmação de envio",
   assert.equal(await sendReply(config, message.number, "Olá", fake), "sent-id");
   await assert.rejects(sendReply(config, message.number, "Olá", async () => Response.json({})), /confirmacao_ausente/);
 });
+
+ test("delay do chatbot chega ao processador sem depender da agenda", () => {
+  for (const delay of [0, 5, 12]) {
+    const parsed = configurarAgente(config, { ...chatbotExample, context: "Atendimento de teste", delay, agendaConsultas: false });
+    assert.equal(parsed.success, true);
+    if (parsed.success) assert.equal(parsed.data.delay, delay);
+  }
+});

@@ -15,7 +15,7 @@
     "A Dra. Juliana Matos atende em Salvador e Camaçari. Seria para qual lugar?"
   ],
   "fallback": "Informe que a informação precisa ser confirmada pela equipe, sem inventar dados nem afirmar que uma transferência foi realizada.",
-  "delay": 3,
+  "delay": 5,
   "transferMedia": false,
   "transferHuman": false,
   "destination": "Atendimento humano",

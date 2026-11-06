@@ -65,8 +65,8 @@ test("escolha não reserva antes da conferência nem troca silenciosamente a dat
   assert.equal(estado.horario?.id, "1");
   assert.equal(estado.etapa, "dados");
 });
-test("espera oito segundos somente quando agenda está habilitada", () => {
-  assert.equal(deveAguardarResposta(true, agora / 1000, agora + 7999), true);
-  assert.equal(deveAguardarResposta(true, agora / 1000, agora + 8000), false);
-  assert.equal(deveAguardarResposta(false, agora / 1000, agora), false);
+test("respeita o delay configurado, inclusive zero", () => {
+  assert.equal(deveAguardarResposta(5, agora / 1000, agora + 4999), true);
+  assert.equal(deveAguardarResposta(5, agora / 1000, agora + 5000), false);
+  assert.equal(deveAguardarResposta(0, agora / 1000, agora), false);
 });

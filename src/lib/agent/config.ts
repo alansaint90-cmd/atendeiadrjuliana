@@ -14,6 +14,7 @@ export const agentBaseConfigSchema = settingsSchema.extend({
 });
 export const agentConfigSchema = agentBaseConfigSchema.extend({
   AI_SYSTEM_PROMPT: z.string().trim().min(1).max(200000),
+  delay: chatbotSchema.shape.delay.optional(),
   openingMessages: chatbotSchema.shape.openingMessages,
   agendaConsultas: chatbotSchema.shape.agendaConsultas,
   atendimento: z.object({ transferHuman: z.boolean(), transferMedia: z.boolean(),
@@ -25,6 +26,7 @@ export function configurarAgente(settings: unknown, chatbot: Chatbot | null) {
   const base = agentBaseConfigSchema.safeParse(settings);
   return agentConfigSchema.safeParse(base.success ? { ...base.data,
     AI_SYSTEM_PROMPT: montarInstrucoesDoAgente(chatbot),
+    delay: chatbot?.delay ?? 5,
     openingMessages: chatbot?.openingMessages,
     agendaConsultas: chatbot?.agendaConsultas,
     atendimento: chatbot ? { transferHuman: chatbot.transferHuman, transferMedia: chatbot.transferMedia,
