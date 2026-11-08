@@ -357,7 +357,7 @@ test("saída manual em lote somente com LID pausa o telefone associado e cancela
   let agora = inicio; t.mock.method(Date, "now", () => agora);
   let envios = 0; let geracoes = 0;
   const evento: EvolutionEvent = { instance: instancia, event: "messages.upsert", data: { key: { id: randomUUID(), fromMe: false, remoteJid: "5511666555555@s.whatsapp.net" }, messageTimestamp: inicio / 1000, message: { conversation: "Oi" } } };
-  const dependencias = { settings: async () => ({ AI_ENABLED: "true", OPENAI_API_KEY: "sk-test-only", OPENAI_MODEL: "modelo", EVOLUTION_API_URL: "https://example.invalid", EVOLUTION_API_KEY: "teste", EVOLUTION_INSTANCE_NAME: instancia, REDIS_URL: url }),
+  const dependencias = { settings: async () => ({ AI_ENABLED: "true" as const, OPENAI_API_KEY: "sk-test-only", OPENAI_MODEL: "modelo", EVOLUTION_API_URL: "https://example.invalid", EVOLUTION_API_KEY: "teste", EVOLUTION_INSTANCE_NAME: instancia, REDIS_URL: url }),
     chatbot: async () => ({ ...chatbotExample, delay: 5, agendaConsultas: false, context: "Atendimento de teste", openingMessages: [] }),
     registrarEnvio: async () => {}, generate: async () => { geracoes++; return "Olá"; }, send: async () => { envios++; return randomUUID(); } };
   try {
