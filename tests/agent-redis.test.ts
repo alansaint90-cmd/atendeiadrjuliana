@@ -26,7 +26,7 @@ test("ecos dos dois balões da abertura não pausam a IA", { skip: !process.env.
     await enqueueEvolutionEventWithClient(client, evento(randomUUID()));
     await runAgentTick({ settings: async () => ({ AI_ENABLED: "true", OPENAI_API_KEY: "sk-test-only", OPENAI_MODEL: "modelo",
       EVOLUTION_API_URL: "https://example.invalid", EVOLUTION_API_KEY: "teste", EVOLUTION_INSTANCE_NAME: instancia, REDIS_URL: url }),
-    chatbot: async () => ({ ...chatbotExample, context: "Prompt", openingMessages: ["Bem-vindo.", "Qual seu nome?"] }),
+    chatbot: async () => ({ ...chatbotExample, delay: 0, context: "Prompt", openingMessages: ["Bem-vindo.", "Qual seu nome?"] }),
     registrarEnvio: async () => {}, generate: async () => { throw new Error("Não gerar abertura"); },
     send: async () => { const id = randomUUID(); ids.push(id); return id; } });
     assert.equal(ids.length, 2);
@@ -52,7 +52,7 @@ test("transferência pausa 30 minutos, cancela follow-up e não pausa o outro n�
     EVOLUTION_API_URL: "https://example.invalid", EVOLUTION_API_KEY: "teste", EVOLUTION_INSTANCE_NAME: instancia,
     EVOLUTION_SECOND_INSTANCE_NAME: `${instancia}-b`, REDIS_URL: url };
   const saidas: string[] = []; let transferencias = 0;
-  const dependencias = { settings: async () => config, chatbot: async () => ({ ...chatbotExample, context: "Atenda o cliente.", transferNotice: "Nossa equipe continuará o atendimento." }),
+  const dependencias = { settings: async () => config, chatbot: async () => ({ ...chatbotExample, delay: 0, context: "Atenda o cliente.", transferNotice: "Nossa equipe continuará o atendimento." }),
     generate: async () => ({ transferir: true as const }), transferir: async () => {
       transferencias++;
       await client.set(`atendeia:{evolution}:followup:${mensagem.conversation}`, "ciclo simulado");
@@ -96,7 +96,7 @@ test("Redis real: recuperação de pendentes, Lua atômico e exclusão de envio 
   const textosEnviados: string[] = [];
   const registros: string[] = [];
   const dependencies = { settings: async () => config,
-    chatbot: async () => ({ ...chatbotExample, context: "Atenda o cliente conforme este roteiro de teste." }),
+    chatbot: async () => ({ ...chatbotExample, delay: 0, context: "Atenda o cliente conforme este roteiro de teste." }),
     registrarEnvio: async (instancia: string, id: string) => { registros.push(`${instancia}:${id}`); },
     generate: async () => { generations++; return "Olá"; },
     send: async (_config: Pick<AgentConfig, "EVOLUTION_API_URL" | "EVOLUTION_API_KEY" | "EVOLUTION_INSTANCE_NAME">, _numero: string, texto: string) => {
@@ -193,7 +193,7 @@ test("mensagem humana pausa a IA por 30 minutos da última saída; eco da IA nã
   const config: AgentConfig = { AI_ENABLED: "true", AI_SYSTEM_PROMPT: "Teste", OPENAI_API_KEY: "sk-test-only",
     OPENAI_MODEL: "modelo-teste", EVOLUTION_API_URL: "https://example.invalid", EVOLUTION_API_KEY: "teste",
     EVOLUTION_INSTANCE_NAME: "teste", REDIS_URL: url };
-  const chatbot = async () => ({ ...chatbotExample, context: "Atenda o cliente." });
+  const chatbot = async () => ({ ...chatbotExample, delay: 0, context: "Atenda o cliente." });
   let gera = 0;
   let envia = 0;
   const dependencies = { settings: async () => config, chatbot,
@@ -254,7 +254,7 @@ test("três números: prompts próprios, histórico, pausa e follow-ups isolados
   const consultas: string[] = [];
   let prompt = "Mesmo roteiro aprovado para os três chips.";
   const dependencies = { settings: async () => config,
-    chatbot: async (instancia: string) => { consultas.push(instancia); return { ...chatbotExample, context: `${prompt} Variante ${instancia}` }; },
+    chatbot: async (instancia: string) => { consultas.push(instancia); return { ...chatbotExample, delay: 0, context: `${prompt} Variante ${instancia}` }; },
     registrarEnvio: async () => {},
     generate: async (atual: AgentConfig, historico: Turn[]) => {
       geracoes.push({ instancia: atual.EVOLUTION_INSTANCE_NAME, prompt: atual.AI_SYSTEM_PROMPT, historico });
@@ -346,5 +346,31 @@ test("saída manual em lote somente com LID pausa o telefone associado e cancela
     await client.del(streamKey, ciclo, pausaManualKey(conversation), pausaManualKey(conversaLid),
       `atendeia:{evolution}:contact-alias:${conversation}`, `atendeia:{evolution}:contact-alias:${conversaLid}`);
     await client.zrem(followupQueue, conversation); client.disconnect();
+  }
+});
+
+ test("Redis real: delay aguarda cinco segundos e preserva evento pendente", { skip: !process.env.TEST_REDIS_URL }, async t => {
+  const url = process.env.TEST_REDIS_URL!; const alvo = new URL(url);
+  assert.ok(["localhost", "127.0.0.1"].includes(alvo.hostname) && alvo.pathname === "/15");
+  const client = agentRedis(url); await client.connect();
+  const instancia = "delay-" + randomUUID(); const inicio = Math.floor(Date.now() / 1000) * 1000;
+  let agora = inicio; t.mock.method(Date, "now", () => agora);
+  let envios = 0; let geracoes = 0;
+  const evento: EvolutionEvent = { instance: instancia, event: "messages.upsert", data: { key: { id: randomUUID(), fromMe: false, remoteJid: "5511666555555@s.whatsapp.net" }, messageTimestamp: inicio / 1000, message: { conversation: "Oi" } } };
+  const dependencias = { settings: async () => ({ AI_ENABLED: "true", OPENAI_API_KEY: "sk-test-only", OPENAI_MODEL: "modelo", EVOLUTION_API_URL: "https://example.invalid", EVOLUTION_API_KEY: "teste", EVOLUTION_INSTANCE_NAME: instancia, REDIS_URL: url }),
+    chatbot: async () => ({ ...chatbotExample, delay: 5, agendaConsultas: false, context: "Atendimento de teste", openingMessages: [] }),
+    registrarEnvio: async () => {}, generate: async () => { geracoes++; return "Olá"; }, send: async () => { envios++; return randomUUID(); } };
+  try {
+    await enqueueEvolutionEventWithClient(client, evento);
+    await runAgentTick(dependencias);
+    assert.equal(envios, 0); assert.equal(geracoes, 0);
+    agora = inicio + 4999; await runAgentTick(dependencias);
+    assert.equal(envios, 0); assert.equal(geracoes, 0);
+    agora = inicio + 5000; await runAgentTick(dependencias);
+    assert.equal(envios, 1); assert.equal(geracoes, 1);
+    await runAgentTick(dependencias); assert.equal(envios, 1);
+  } finally {
+    t.mock.restoreAll();
+    await client.del(streamKey, agentKeys.lock, agentKeys.heartbeat, agentKeys.archive); client.disconnect();
   }
 });
