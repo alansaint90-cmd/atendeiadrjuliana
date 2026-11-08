@@ -163,3 +163,6 @@ Oferta de vagas de Salvador: ordenar as datas da mais próxima à mais distante 
 Retorno da pausa manual: uma mensagem de texto enviada pelo atendente com a frase completa “Se precisar de algo mais, é só chamar” encerra a pausa apenas daquela conversa/instância e seus aliases explícitos. Aceitar variações de acento, caixa, espaços e pontuação; não aceitar trechos ou frases adicionais. Mensagens do cliente e ecos da IA não liberam a pausa. A retomada não envia mensagem nem refaz eventos anteriores: permite responder à próxima entrada válida, respeitando ativação, desligamento e demais guardas. Eventos antigos não sobrepõem intervenção manual mais recente.
 
 Novos agendamentos coletam idade de 5 a 120 anos, sem pedir nem inventar data de nascimento. Datas de nascimento de reservas e cadastros antigos são preservadas; novos registros podem ter nascimento nulo. A migração adiciona idade e preserva o histórico.
+
+### Aceite antes do cadastro
+Antes de pedir nome completo, idade ou endereço, o fluxo pergunta “Vamos agendar a sua consulta?” e aguarda aceite explícito. Dúvidas e escolha de cidade não autorizam a coleta. O aceite inicial não confirma a reserva: a conferência dos dados e a confirmação real da agenda continuam obrigatórias.

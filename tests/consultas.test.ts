@@ -33,7 +33,8 @@ test("oferece somente vagas de quinta e entende horário com pergunta sem sair d
     assert.match(mensagens[2], /^Qual desses horários você prefere\?/u);
     assert.doesNotMatch(menu!, /informe outra data|dia específico|aguarde/i);
     assert.match((await conduzirCadastro(porta, "preco", "Quanto custa?"))!, /400,00/);
-    assert.match((await conduzirCadastro(porta, "escolha", escolha))!, /nome completo/);
+    assert.match((await conduzirCadastro(porta, "escolha", escolha))!, /Vamos agendar/);
+    assert.match((await conduzirCadastro(porta, "aceite", "sim"))!, /nome completo/);
     const salvo = await porta.ler(); assert.equal(salvo?.horario?.id, vagas[5].id);
   }
 });
@@ -110,7 +111,8 @@ test("WhatsApp coleta além do histórico curto e só reserva após conferência
       assert.equal(dados.paciente.telefone, ""); assert.equal(dados.paciente.cep, "");
       assert.equal(dados.paciente.uf, "");
       return { ...dados.paciente, id: identidade, horarioId: vaga.id, instancia: "teste", ...periodo, atualizadoEm: new Date().toISOString(), status: "confirmada" }; } };
-  assert.match((await conduzirCadastro(porta, "inicio", "Quero agendar", true))!, /nome completo/);
+  assert.match((await conduzirCadastro(porta, "inicio", "Quero agendar", true))!, /Vamos agendar/);
+  assert.match((await conduzirCadastro(porta, "aceite", "sim"))!, /nome completo/);
   const entradas = ["identificação", "endereço", "Salvador", "1"];
   for (let i = 0; i < entradas.length; i++) {
     const resposta = await conduzirCadastro(porta, `dado-${i}`, entradas[i]);

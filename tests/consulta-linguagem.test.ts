@@ -63,7 +63,7 @@ test("escolha não reserva antes da conferência nem troca silenciosamente a dat
   }
   await conduzirCadastro(porta, "escolha", "dia vinte e dois de outubro às oito horas");
   assert.equal(estado.horario?.id, "1");
-  assert.equal(estado.etapa, "dados");
+  assert.equal(estado.etapa, "interesse");
 });
 test("respeita o delay configurado, inclusive zero", () => {
   assert.equal(deveAguardarResposta(5, agora / 1000, agora + 4999), true);

@@ -29,6 +29,7 @@ test("respostas parciais preservam campos e Camaçari não consulta nem reserva 
       : texto === "data" ? { idade: "36" }
       : { rua: "Rua Exemplo", numero: "10", bairro: "Centro", cidade: "Camaçari", uf: "BA" } };
   await conduzirCadastro(porta, "1", "Quero agendar", true);
+  await conduzirCadastro(porta, "aceite", "sim");
   const parcial = await conduzirCadastro(porta, "2", "nome");
   assert.match(parcial!, /Qual é a sua idade/); assert.doesNotMatch(parcial!, /nome completo/);
   await conduzirCadastro(porta, "3", "data inválida");
@@ -39,4 +40,20 @@ test("respostas parciais preservam campos e Camaçari não consulta nem reserva 
   assert.match((await conduzirCadastro(porta, "6", "Camaçari"))!, /3621-4575/);
   assert.equal((await porta.ler())?.etapa, "encerrado");
   assert.deepEqual((await porta.ler())?.paciente, {});
+});
+
+test("aceite é obrigatório antes de extrair dados e recusa encerra sem reserva", async () => {
+  let estado: CadastroConsulta | null = null;
+  const porta: PortaCadastroConsulta = { ativo: async () => true, ler: async () => estado, salvar: async d => { estado = d; },
+    vagas: async () => [], reservar: async () => { throw new Error("Não reservar"); },
+    extrair: async () => { throw new Error("Não coletar antes do aceite"); } };
+  assert.match((await conduzirCadastro(porta, "inicio", "Quero agendar", true))!, /Vamos agendar/);
+  assert.match((await conduzirCadastro(porta, "local", "Salvador"))!, /Vamos agendar/);
+  assert.match((await conduzirCadastro(porta, "preco", "Qual o valor?"))!, /400,00/);
+  assert.equal((await porta.ler())?.etapa, "interesse");
+  assert.match((await conduzirCadastro(porta, "nao", "agora não"))!, /Tudo bem/);
+  assert.equal((await porta.ler())?.etapa, "encerrado");
+  await conduzirCadastro(porta, "novo", "Quero agendar", true);
+  assert.match((await conduzirCadastro(porta, "sim", "sim"))!, /nome completo/);
+  assert.equal((await porta.ler())?.etapa, "dados");
 });

@@ -5,6 +5,7 @@ import { interpretarEscolha } from "./escolha";
 import { HORARIOS_CONSULTA } from "./calendario";
 import { camposPendentes, perguntaDados, perguntaIdentificacao, perguntaLocal, normalizarCampo, type CampoPaciente } from "./coleta";
 
+export const perguntaInteresse = "Vamos agendar a sua consulta?";
 const campos = ["nomeCompleto", "telefone", "idade", "cep", "rua", "numero", "complemento", "bairro", "cidade"] as const;
 const normalizarPergunta = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 function informacoesSolicitadas(texto: string) {
@@ -19,7 +20,7 @@ const valorConsulta = "O valor da consulta com a Dra. Juliana em Salvador é R$ 
 const enderecoClinica = "Clínica Bonvida — Av. Professor Magalhães Neto, nº 1541, Bloco A, 7º andar, sala 7024. Centro Médico do Hospital da Bahia, Pituba, Salvador/BA.";
 const avisoChegada = "Chegue 20 minutos antes para fazer o cadastro presencial e agilizar seu atendimento.";
 const contatoCamacari = "Em Camaçari, a Dra. Juliana atende no Hospital SEMERGE. Para agendar, fale diretamente pelo WhatsApp: (71) 3621-4575.\nhttps://api.whatsapp.com/send?phone=557136214575\nO hospital confirma os horários e as condições da consulta.";
-export interface CadastroConsulta { id: string; etapa: "horario" | "dados" | "local" | "conferencia" | "encerrado"; opcoes: HorarioConsulta[]; local?: "salvador";
+export interface CadastroConsulta { id: string; etapa: "interesse" | "horario" | "dados" | "local" | "conferencia" | "encerrado"; opcoes: HorarioConsulta[]; local?: "salvador";
   horario?: HorarioConsulta; paciente: Partial<PacienteConsulta>; ultimaMensagem?: string; ultimaResposta?: string }
 export interface PortaCadastroConsulta {
   ler(): Promise<CadastroConsulta | null>; salvar(dados: CadastroConsulta): Promise<void>;
@@ -60,7 +61,7 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
   if (informativa && /cama[çc]ari|semerge|falta de ar|dor no peito|socorro|urg[eê]ncia|atendente|humano/iu.test(texto)) return null;
   if (informativa) {
     const emAndamento = Boolean(d && d.etapa !== "encerrado");
-    d ??= { id: randomUUID(), etapa: "dados", opcoes: [], paciente: {} };
+    d ??= { id: randomUUID(), etapa: "interesse", opcoes: [], paciente: {} };
     const respostas: string[] = [];
     if (duvidas.valor) respostas.push(valorConsulta);
     if (duvidas.endereco) respostas.push(enderecoClinica);
@@ -74,7 +75,7 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
         ? informacaoVagas.slice(0, informacaoVagas.lastIndexOf("\n\n")) : informacaoVagas);
     }
     if (emAndamento) {
-      const retomada = d.etapa === "dados" ? perguntaDados(d.paciente)
+      const retomada = d.etapa === "interesse" ? perguntaInteresse : d.etapa === "dados" ? perguntaDados(d.paciente)
         : d.etapa === "local" ? perguntaLocal
         : d.etapa === "conferencia" ? "Os dados e o horário apresentados estão corretos? Responda confirmo ou corrigir."
         : d.etapa === "horario" && !duvidas.horarios ? "Qual dos horários apresentados você prefere?" : null;
@@ -83,14 +84,14 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
     return responder(respostas.join("\n\n"));
   }
   if (!d || d.etapa === "encerrado") {
-    d = { id: randomUUID(), etapa: "dados", opcoes: [], paciente: {} };
+    d = { id: randomUUID(), etapa: "interesse", opcoes: [], paciente: {} };
     // Pedidos explícitos de disponibilidade continuam recebendo vagas reais imediatamente.
     if (/hor[aá]rio|vaga/iu.test(texto)) {
       d.opcoes = (await porta.vagas()).filter(v => v.disponivel).slice(0, 6);
       d.etapa = d.opcoes.length ? "horario" : "encerrado";
       return responder(menu(d.opcoes));
     }
-    return responder(perguntaIdentificacao);
+    return responder(perguntaInteresse);
   }
   const entrada = texto.trim();
   if (/^(cancelar cadastro|parar cadastro|sair do cadastro)$/iu.test(entrada)) {
@@ -98,6 +99,14 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
   }
   // Perguntas e pedidos fora do cadastro continuam no prompt, inclusive urgências e atendimento humano.
   if (/(?:falta de ar|dor no peito|urgência|urgencia|socorro|sintoma|atendente|humano|recepção|recepcao|remarcar|reagendar|cancelar consulta)/iu.test(entrada)) return null;
+  if (d.etapa === "interesse") {
+    const aceite = normalizarPergunta(entrada).trim();
+    if (/^(?:nao|agora nao|ainda nao|nao quero|nao quero agendar|so queria informacoes)[.!]*$/u.test(aceite)) {
+      d.etapa = "encerrado"; return responder("Tudo bem! Se quiser esclarecer alguma dúvida sobre a consulta, estou à disposição.");
+    }
+    if (!/^(?:sim|quero|quero sim|vamos|vamos sim|pode|pode sim|pode agendar|pode marcar|quero agendar|quero marcar|confirmo)[.!]*$/u.test(aceite)) return responder(perguntaInteresse);
+    d.etapa = "dados"; return responder(perguntaDados(d.paciente));
+  }
   if (d.etapa === "local" || (d.etapa === "horario" && /cama[çc]ari|semerge/iu.test(entrada))) {
     const camacari = /cama[çc]ari|semerge/iu.test(entrada); const salvador = /salvador|bonvida/iu.test(entrada);
     if (camacari && !salvador) {
@@ -127,8 +136,8 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
     const candidatas = hora ? d.opcoes.filter(v => (!escolha.dia || new Date(v.inicio).toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) === escolha.dia) && new Date(v.inicio).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) === hora) : [];
     const opcao = escolha.opcao ? d.opcoes[escolha.opcao - 1] : candidatas.length === 1 ? candidatas[0] : undefined;
     if (!opcao) return responder(menu(d.opcoes));
-    d.horario = opcao; d.etapa = camposPendentes(d.paciente).length ? "dados" : d.local ? "conferencia" : "local";
-    return responder(d.etapa === "conferencia" ? resumo(d) : d.etapa === "local" ? perguntaLocal : perguntaDados(d.paciente));
+    d.horario = opcao; d.etapa = camposPendentes(d.paciente).length ? "interesse" : d.local ? "conferencia" : "local";
+    return responder(d.etapa === "conferencia" ? resumo(d) : d.etapa === "local" ? perguntaLocal : perguntaInteresse);
   }
   if (entrada.includes("?")) return null;
   if (d.etapa === "conferencia") {
