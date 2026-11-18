@@ -43,3 +43,21 @@ test("outras dúvidas não repetem coleta e preço de Camaçari não recebe tabe
   assert.equal(await conduzirCadastro(porta, "camacari", "Qual o valor em Camaçari"), null);
   assert.deepEqual(estado.paciente, {});
 });
+
+for (const etapa of ["interesse", "dados", "horario", "local", "conferencia"] as const) {
+ test("responde onde e preserva contexto durante " + etapa, async () => {
+  let estado: CadastroConsulta = { id: "patricia", etapa, paciente: { nomeCompleto: "Patrícia Exemplo", idade: "60" }, opcoes: [] };
+  const porta: PortaCadastroConsulta = { ativo: async () => true, ler: async () => estado, salvar: async d => { estado = d; }, vagas: async () => [], extrair: async () => { throw Error("Não extrair dúvida"); }, reservar: async () => { throw Error("Não reservar"); } };
+  for (const texto of ["Onde ela atende em Salvador?", "Onde?", "Onde", "Qual local?", "Me passa a localização"]) {
+   const resposta = await conduzirCadastro(porta, texto, texto);
+   assert.match(resposta!, /Bonvida.*1541.*7024/s);
+   if (etapa === "interesse") assert.doesNotMatch(resposta!, /Vamos agendar/);
+   assert.equal(estado.etapa, etapa); assert.equal(estado.paciente.idade, "60");
+  }
+  if (etapa === "interesse") {
+   assert.equal(await conduzirCadastro(porta, "plano", "Aceita meu plano?"), null);
+   assert.equal(estado.etapa, "interesse");
+   assert.match((await conduzirCadastro(porta, "aceite", "sim"))!, /endereço completo/);
+  }
+ });
+}

@@ -12,7 +12,7 @@ function informacoesSolicitadas(texto: string) {
   const t = normalizarPergunta(texto);
   return {
     valor: /\b(?:valor|preco|custo|investimento|pagamento|pix|cartao|parcelamento)\b|quanto (?:custa|e|fica)/u.test(t),
-    endereco: /(?:qual|onde|saber|informa|manda|passa|envia).*(?:endereco|localizacao|clinica|consultorio)|(?:endereco|localizacao).*(?:clinica|consultorio|bonvida|hospital)|como (?:chegar|chego)/u.test(t),
+    endereco: /(?:qual|onde|saber|informa|manda|passa|envia).*(?:endereco|localizacao|clinica|consultorio)|(?:endereco|localizacao).*(?:clinica|consultorio|bonvida|hospital)|como (?:chegar|chego)|\bonde\b|\b(?:qual|em qual) (?:o )?(?:local|unidade|hospital)\b|\b(?:local)\s*[?!.]*$/u.test(t),
     horarios: /(?:horarios?|vagas?).*(?:disponiveis|disponivel|livres?|atendimento)|(?:quais|qual|saber|ver|consultar|tem|informa|manda|passa).*(?:horarios?|vagas?)|dias? de atendimento/u.test(t),
   };
 }
@@ -74,8 +74,8 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
       respostas.push(emAndamento && d.etapa !== "horario" && opcoes.length
         ? informacaoVagas.slice(0, informacaoVagas.lastIndexOf("\n\n")) : informacaoVagas);
     }
-    if (emAndamento) {
-      const retomada = d.etapa === "interesse" ? perguntaInteresse : d.etapa === "dados" ? perguntaDados(d.paciente)
+    if (emAndamento && d.etapa !== "interesse") {
+      const retomada = d.etapa === "dados" ? perguntaDados(d.paciente)
         : d.etapa === "local" ? perguntaLocal
         : d.etapa === "conferencia" ? "Os dados e o horário apresentados estão corretos? Responda confirmo ou corrigir."
         : d.etapa === "horario" && !duvidas.horarios ? "Qual dos horários apresentados você prefere?" : null;
@@ -104,7 +104,7 @@ export async function conduzirCadastro(porta: PortaCadastroConsulta, mensagemId:
     if (/^(?:nao|agora nao|ainda nao|nao quero|nao quero agendar|so queria informacoes)[.!]*$/u.test(aceite)) {
       d.etapa = "encerrado"; return responder("Tudo bem! Se quiser esclarecer alguma dúvida sobre a consulta, estou à disposição.");
     }
-    if (!/^(?:sim|quero|quero sim|vamos|vamos sim|pode|pode sim|pode agendar|pode marcar|quero agendar|quero marcar|confirmo)[.!]*$/u.test(aceite)) return responder(perguntaInteresse);
+    if (!/^(?:sim|quero|quero sim|vamos|vamos sim|pode|pode sim|pode agendar|pode marcar|quero agendar|quero marcar|confirmo)[.!]*$/u.test(aceite)) return null;
     d.etapa = "dados"; return responder(perguntaDados(d.paciente));
   }
   if (d.etapa === "local" || (d.etapa === "horario" && /cama[çc]ari|semerge/iu.test(entrada))) {

@@ -166,3 +166,6 @@ Novos agendamentos coletam idade de 5 a 120 anos, sem pedir nem inventar data de
 
 ### Aceite antes do cadastro
 Antes de pedir nome completo, idade ou endereço, o fluxo pergunta “Vamos agendar a sua consulta?” e aguarda aceite explícito. Dúvidas e escolha de cidade não autorizam a coleta. O aceite inicial não confirma a reserva: a conferência dos dados e a confirmação real da agenda continuam obrigatórias.
+
+### Dúvidas durante o aceite
+Perguntas de localização, inclusive “Onde ela atende em Salvador?” e “Onde?”, recebem o endereço cadastrado antes de qualquer retomada. Na etapa de interesse, dúvidas não repetem o CTA e não representam aceite. Entradas não reconhecidas nessa etapa seguem para a IA interpretar pelo contexto, preservando a etapa e os dados anteriores.

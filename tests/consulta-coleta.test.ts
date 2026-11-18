@@ -48,7 +48,7 @@ test("aceite é obrigatório antes de extrair dados e recusa encerra sem reserva
     vagas: async () => [], reservar: async () => { throw new Error("Não reservar"); },
     extrair: async () => { throw new Error("Não coletar antes do aceite"); } };
   assert.match((await conduzirCadastro(porta, "inicio", "Quero agendar", true))!, /Vamos agendar/);
-  assert.match((await conduzirCadastro(porta, "local", "Salvador"))!, /Vamos agendar/);
+  assert.equal(await conduzirCadastro(porta, "local", "Salvador"), null);
   assert.match((await conduzirCadastro(porta, "preco", "Qual o valor?"))!, /400,00/);
   assert.equal((await porta.ler())?.etapa, "interesse");
   assert.match((await conduzirCadastro(porta, "nao", "agora não"))!, /Tudo bem/);
