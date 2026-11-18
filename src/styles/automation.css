@@ -40,3 +40,18 @@
 .agenda-pendente { background: #eaf2ff; color: #215aa0; }
 .feature-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 22px; font-size: 13px; }
 @media (max-width: 720px) { .followup-grid, .followup-grid.three, .admin-access { grid-template-columns: 1fr; } .feature-pagination { flex-wrap: wrap; } .sidebar { min-width: 0; } .followup-save-bar { flex-wrap: wrap; margin: 16px -16px -16px; padding: 12px 16px; } .followup-save-bar > button { width: 100%; } }
+.fila-menu { min-width: 44px; }
+.fila-menu > summary { list-style: none; cursor: pointer; border-radius: 12px; border: 1px solid var(--line); min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; }
+.fila-menu > summary::-webkit-details-marker { display: none; }
+.fila-menu > summary:focus-visible { outline: 2px solid var(--purple, #7c3aed); outline-offset: 3px; }
+.fila-opcoes { display: grid; gap: 6px; min-width: 190px; padding: 8px 0; }
+.fila-opcoes button { text-align: left; min-height: 44px; padding: 8px 12px; }
+.fila-tabela table { table-layout: fixed; width: 100%; min-width: 1050px; }
+.fila-tabela td { vertical-align: top; overflow-wrap: anywhere; }
+.fila-tabela td small, .fila-tabela td strong { display: block; }
+.fila-tabela .agendamento-mensagem summary { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fila-tabela .agendamento-mensagem p { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fila-menu { position: relative; }
+.fila-menu[open] { padding-bottom: 124px; }
+.fila-menu .fila-opcoes { position: absolute; right: 0; top: 48px; min-width: 210px; max-width: min(280px, 80vw); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); z-index: 30; padding: 8px; }
+.fila-opcoes button { width: 100%; white-space: normal; }

@@ -1,101 +1,47 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { carregarAgendamentos, gravarAgendamento, cancelarEnvioAgendado } from "@/lib/actions/agendamentos";
-import { statusAgendamento, type Agendamento, type DadosAgendamento } from "@/lib/agendamentos/schema";
+import { carregarFilaMensagens, alterarFilaMensagens } from "@/lib/actions/fila-mensagens";
+import { statusFila, type MensagemFila, type AcaoFila } from "@/lib/agendamentos/fila-schema";
 import { ModalConfirmacaoBlock } from "../modal-confirmacao-block";
-
-function dataLocal(iso: string) {
-  const data = new Date(iso);
-  return new Date(data.getTime() - data.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
-const formatar = (iso: string) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-export function AgendamentosPage({ ativoNaTela = true }: { ativoNaTela?: boolean }) {
-  const [itens, setItens] = useState<Agendamento[] | null>(null);
-  const [instancias, setInstancias] = useState<string[]>([]);
-  const [ativo, setAtivo] = useState(false);
-  const [ocupado, setOcupado] = useState(false);
-  const [erro, setErro] = useState("");
-  const [aviso, setAviso] = useState("");
-  const [busca, setBusca] = useState("");
-  const [filtro, setFiltro] = useState("");
-  const [pagina, setPagina] = useState(0);
-  const [rascunho, setRascunho] = useState<DadosAgendamento | null>(null);
-  const [versao, setVersao] = useState<number | undefined>();
-  const [horario, setHorario] = useState("");
-  const [confirmacao, setConfirmacao] = useState<"salvar" | "cancelar" | null>(null);
-  const [alvo, setAlvo] = useState<Agendamento | null>(null);
-  const carregar = useCallback(async () => {
-    setOcupado(true); setErro(""); setAviso("");
-    try {
-      const r = await carregarAgendamentos();
-      if (!r.ok) { setErro(r.erro); return; }
-      setItens(r.dados.itens); setInstancias(r.dados.instancias); setAtivo(r.dados.processadorAtivo); setPagina(0);
-    } catch { setErro("Falha de conexão ao carregar agendamentos."); } finally { setOcupado(false); }
-  }, []);
-  useEffect(() => {
-    if (!ativoNaTela) return;
-    const timer = window.setTimeout(() => void carregar(), 0);
-    return () => window.clearTimeout(timer);
-  }, [ativoNaTela, carregar]);
-  function editar(item?: Agendamento) {
-    setErro(""); setAviso(""); setVersao(item?.version);
-    const iso = item?.agendadoPara ?? new Date(Date.now() + 3600000).toISOString();
-    setHorario(dataLocal(iso));
-    setRascunho({ id: item?.id ?? crypto.randomUUID(), telefone: item?.telefone ?? "", instancia: item?.instancia ?? instancias[0] ?? "",
-      mensagem: item?.mensagem ?? "", agendadoPara: iso });
-  }
-  async function confirmar() {
-    setOcupado(true); setErro("");
-    try {
-      const r = confirmacao === "cancelar"
-        ? await cancelarEnvioAgendado({ id: alvo?.id, version: alvo?.version })
-        : await gravarAgendamento(rascunho, versao === undefined ? undefined : { id: rascunho!.id, version: versao });
-      if (!r.ok) { setErro(r.erro); return; }
-      setItens(previous => [r.dados, ...previous!.filter(item => item.id !== r.dados.id)].sort((a, b) => b.agendadoPara.localeCompare(a.agendadoPara)));
-      setRascunho(null); setAlvo(null); setPagina(0);
-      setAviso(confirmacao === "cancelar" ? "Agendamento cancelado." : "Agendamento salvo no servidor.");
-    } catch { setErro("Falha de conexão. Recarregue a lista antes de tentar novamente."); }
-    finally { setOcupado(false); setConfirmacao(null); }
-  }
-  const filtrados = (itens ?? []).filter(item => (!filtro || item.status === filtro) && `${item.telefone} ${item.mensagem} ${item.instancia}`.toLowerCase().includes(busca.toLowerCase()));
-  const atual = Math.min(pagina, Math.max(0, Math.ceil(filtrados.length / 10) - 1));
-  return <div className="page-stack">
-    <section className="page-head"><div><h1>Mensagens agendadas</h1><p>Agende envios individuais para contatos específicos.</p></div></section>
-    {erro && <p role="alert" className="error-message">{erro}</p>}{aviso && <p role="status">{aviso}</p>}
-    {!itens && !erro && <p role="status">{ocupado ? "Carregando agendamentos…" : "Aguardando a consulta dos agendamentos."}</p>}
-    {itens && <article className="panel">
-      {!ativo && <p role="status" className="followup-note">Processador desativado no servidor. Os agendamentos serão salvos, mas o envio depende da ativação em Configurações do servidor.</p>}
-      <div className="page-head"><div className="agendamento-filtros"><label>Buscar<input placeholder="Telefone, chip ou mensagem" value={busca} onChange={e => { setBusca(e.target.value); setPagina(0); }} /></label>
-        <label>Status<select value={filtro} onChange={e => { setFiltro(e.target.value); setPagina(0); }}><option value="">Todos</option>{Object.entries(statusAgendamento).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>
-        <button className="primary" disabled={ocupado || !instancias.length} onClick={() => editar()}>+ Novo agendamento</button></div>
-      {!instancias.length && <p>Configure um chip Evolution em Configurações para agendar.</p>}
-      {rascunho && <form className="tag-editor" onSubmit={event => {
-        event.preventDefault(); const data = new Date(horario);
-        if (!Number.isFinite(data.getTime()) || data.getTime() < Date.now() + 60000) { setErro("Escolha um horário com pelo menos um minuto de antecedência."); return; }
-        setRascunho({ ...rascunho, agendadoPara: data.toISOString() }); setConfirmacao("salvar");
-      }}><h2>{versao === undefined ? "Novo agendamento" : "Editar agendamento"}</h2>
-        <div className="followup-grid"><label>Telefone com código do país<input required type="tel" placeholder="+5571999999999" pattern="\+[1-9][0-9]{6,14}" disabled={ocupado} value={rascunho.telefone} onChange={e => setRascunho({ ...rascunho, telefone: e.target.value })} /></label>
-          <label>Chip<select required disabled={ocupado} value={rascunho.instancia} onChange={e => setRascunho({ ...rascunho, instancia: e.target.value })}>
-            {!instancias.includes(rascunho.instancia) && <option value="">Selecione um chip disponível</option>}
-            {instancias.map(instancia => <option key={instancia} value={instancia}>{instancia}</option>)}
-          </select></label></div>
-        <label>Data e hora<input required type="datetime-local" disabled={ocupado} value={horario} onChange={e => setHorario(e.target.value)} /></label>
-        <small>Horários no fuso do seu navegador: {Intl.DateTimeFormat().resolvedOptions().timeZone}. O envio pode ocorrer após o horário se o serviço estiver indisponível.</small>
-        <label>Mensagem<textarea required maxLength={6000} rows={4} disabled={ocupado} value={rascunho.mensagem} onChange={e => setRascunho({ ...rascunho, mensagem: e.target.value })} /></label>
-        <div className="feature-actions"><button className="primary" disabled={ocupado}>Salvar agendamento</button><button className="secondary" type="button" disabled={ocupado} onClick={() => setRascunho(null)}>Fechar formulário</button></div>
-      </form>}
-      <div className="table"><table><thead><tr><th>Data e hora</th><th>Telefone</th><th>Chip</th><th>Mensagem</th><th>Status</th><th>Ações</th></tr></thead>
-        <tbody>{filtrados.slice(atual * 10, atual * 10 + 10).map(item => <tr key={item.id}><td>{formatar(item.agendadoPara)}</td><td>{item.telefone}</td><td>{item.instancia}</td>
-          <td className="agendamento-mensagem"><details><summary>{item.mensagem.slice(0, 75)}{item.mensagem.length > 75 ? "…" : ""}</summary><p>{item.mensagem}</p></details></td>
-          <td><span className={`badge agenda-${item.status}`}>{statusAgendamento[item.status]}</span>{item.codigoErro && <small className="agendamento-erro">{item.codigoErro}</small>}</td>
-          <td>{item.status === "pendente" ? <div className="feature-actions"><button className="secondary" disabled={ocupado} onClick={() => editar(item)}>Editar</button><button className="secondary" disabled={ocupado} onClick={() => { setAlvo(item); setConfirmacao("cancelar"); }}>Cancelar envio</button></div> : "—"}</td></tr>)}</tbody></table></div>
-      {!filtrados.length && <p className="feature-empty">{itens.length ? "Nenhum agendamento encontrado para os filtros." : "Nenhuma mensagem agendada. Crie seu primeiro agendamento."}</p>}
-      <div className="feature-pagination"><span>{filtrados.length} agendamentos · página {atual + 1} de {Math.max(1, Math.ceil(filtrados.length / 10))}</span>
-        <button className="secondary" disabled={!atual} onClick={() => setPagina(atual - 1)}>Anterior</button><button className="secondary" disabled={(atual + 1) * 10 >= filtrados.length} onClick={() => setPagina(atual + 1)}>Próxima</button></div>
-      <p className="followup-note">“Enviado” confirma a aceitação pela Evolution, não a leitura pelo destinatário. Envios incertos exigem conferência antes de criar outro agendamento.</p>
-    </article>}
-    <ModalConfirmacaoBlock aberto={confirmacao !== null} titulo={confirmacao === "cancelar" ? "Cancelar envio agendado" : "Confirmar agendamento"}
-      mensagem={confirmacao === "cancelar" ? `Cancelar o envio para ${alvo?.telefone}? O registro será preservado.` : `Enviar a mensagem para ${rascunho?.telefone} pelo chip ${rascunho?.instancia} em ${rascunho ? formatar(rascunho.agendadoPara) : ""}?`}
-      carregando={ocupado} onConfirmar={() => void confirmar()} onCancelar={() => setConfirmacao(null)} />
-  </div>;
+const formatar=(iso:string)=>new Date(iso).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+const chave=(m:MensagemFila)=>m.origem+":"+m.id;
+const podeCancelar=(m:MensagemFila)=>!m.lixeira&&m.status==="pendente";
+const podeMover=(m:MensagemFila)=>m.status!=="enviando";
+export function AgendamentosPage({ativoNaTela=true}:{ativoNaTela?:boolean}){
+ const [itens,setItens]=useState<MensagemFila[]|null>(null),[avisos,setAvisos]=useState<string[]>([]),[ativo,setAtivo]=useState(false),[ocupado,setOcupado]=useState(false),[erro,setErro]=useState(""),[mensagem,setMensagem]=useState("");
+ const [busca,setBusca]=useState(""),[status,setStatus]=useState(""),[origem,setOrigem]=useState(""),[lixeira,setLixeira]=useState(false),[pagina,setPagina]=useState(0),[selecao,setSelecao]=useState<string[]>([]);
+ const [confirmacao,setConfirmacao]=useState<{acao:AcaoFila;itens:MensagemFila[]}|null>(null);
+ const carregar=useCallback(async()=>{setOcupado(true);setErro("");try{const r=await carregarFilaMensagens();if(!r.ok){setErro(r.erro);return;}setItens(r.dados.itens);setAvisos(r.dados.avisos);setAtivo(r.dados.ativo);}catch{setErro("Não foi possível carregar a fila. Tente atualizar.");}finally{setOcupado(false);}},[]);
+ useEffect(()=>{if(!ativoNaTela)return;const timer=setTimeout(()=>void carregar(),0);return()=>clearTimeout(timer);},[ativoNaTela,carregar]);
+ const filtrados=(itens??[]).filter(i=>i.lixeira===lixeira&&(!status||i.status===status)&&(!origem||i.origem===origem)&&`${i.telefone} ${i.instancia} ${i.mensagem} ${i.origemNome}`.toLocaleLowerCase().includes(busca.toLocaleLowerCase()));
+ const selecionados=filtrados.filter(i=>selecao.includes(chave(i)));
+ const atual=Math.min(pagina,Math.max(0,Math.ceil(filtrados.length/20)-1));
+ function preparar(acao:AcaoFila,lista:MensagemFila[]){const alvos=lista.filter(i=>acao==="cancelar"?podeCancelar(i):podeMover(i));if(!alvos.length){setErro("Nenhum envio elegível para essa operação.");return;}if(alvos.length>5000){setErro("Selecione até 5.000 registros por operação.");return;}setConfirmacao({acao,itens:alvos});}
+ async function confirmar(){if(!confirmacao)return;setOcupado(true);setErro("");try{const r=await alterarFilaMensagens({acao:confirmacao.acao,alvos:confirmacao.itens.map(({id,origem,versao})=>({id,origem,versao}))});
+  if(!r.ok){setErro(r.erro);return;}setMensagem(`${r.dados.alterados} registro(s) alterado(s).${r.dados.naoAlterados?` ${r.dados.naoAlterados} não alterado(s): ${r.dados.avisos.join(" ")}`:""}`);setSelecao([]);await carregar();
+ }catch{setErro("Falha de conexão. Atualize a lista para conferir quais envios foram alterados antes de tentar novamente.");}finally{setOcupado(false);setConfirmacao(null);}}
+ function limpar(){setPagina(0);setSelecao([]);}
+ const verbos={cancelar:"Cancelar envio",lixeira:"Mover para a lixeira",restaurar:"Restaurar registro"};
+ return <div className="page-stack"><section className="page-head"><div><h1>Mensagens agendadas</h1><p>Acompanhe campanhas, follow-ups e envios individuais na mesma fila.</p></div><div className="feature-actions"><button className="secondary" disabled={ocupado} onClick={()=>void carregar()}>Atualizar lista</button><button className="secondary" aria-pressed={lixeira} onClick={()=>{setLixeira(!lixeira);limpar();}}>{lixeira?"Voltar à lista":"Lixeira"}</button></div></section>
+  {erro&&<p role="alert" className="error-message">{erro}</p>}{mensagem&&<p role="status">{mensagem}</p>}{avisos.map(a=><p role="status" key={a} className="followup-note">{a}</p>)}
+  {!itens&&!erro&&<p role="status">Carregando fila de mensagens…</p>}
+  {itens&&<article className="panel"><div className="page-head"><div className="agendamento-filtros"><label>Buscar<input placeholder="Telefone, chip, mensagem ou campanha" value={busca} onChange={e=>{setBusca(e.target.value);limpar();}}/></label>
+   <label>Status<select value={status} onChange={e=>{setStatus(e.target.value);limpar();}}><option value="">Todos</option>{Object.entries(statusFila).map(([v,t])=><option key={v} value={v}>{t}</option>)}</select></label>
+   <label>Origem<select value={origem} onChange={e=>{setOrigem(e.target.value);limpar();}}><option value="">Todas</option><option value="campanha">Campanhas</option><option value="followup">Follow-ups</option><option value="individual">Individuais</option></select></label></div>
+   <details className="fila-menu"><summary aria-label="Opções da lista">⋯</summary><div className="fila-opcoes" role="group" aria-label="Operações da lista">
+    {!lixeira&&<><button disabled={ocupado||!selecionados.some(podeCancelar)} onClick={()=>preparar("cancelar",selecionados)}>Cancelar selecionadas ({selecionados.filter(podeCancelar).length})</button><button disabled={ocupado||!filtrados.some(podeCancelar)||!!avisos.length} onClick={()=>preparar("cancelar",filtrados)}>Cancelar todas deste filtro</button></>}
+    <button disabled={ocupado||!selecionados.some(podeMover)} onClick={()=>preparar(lixeira?"restaurar":"lixeira",selecionados)}>{lixeira?"Restaurar selecionadas":"Mover selecionadas para a lixeira"}</button>
+    <button disabled={ocupado||!filtrados.some(podeMover)||!!avisos.length} onClick={()=>preparar(lixeira?"restaurar":"lixeira",filtrados)}>{lixeira?"Restaurar todas deste filtro":"Mover todas deste filtro para a lixeira"}</button>
+   </div></details></div>
+   {!ativo&&<p className="followup-note">Processador desativado no servidor. A fila é exibida, mas os envios dependem da ativação.</p>}
+   <p aria-live="polite">{lixeira?"Lixeira · ":""}{filtrados.length} registros · {selecionados.length} selecionados</p>
+   <div className="table fila-tabela"><table><colgroup><col style={{width:40}}/><col style={{width:150}}/><col style={{width:140}}/><col style={{width:90}}/><col/><col style={{width:115}}/><col style={{width:155}}/><col style={{width:60}}/></colgroup><thead><tr><th><input type="checkbox" aria-label="Selecionar todas deste filtro" checked={!!filtrados.length&&filtrados.every(i=>selecao.includes(chave(i)))} onChange={e=>setSelecao(e.target.checked?filtrados.map(chave):[])}/></th><th>Data e hora</th><th>Telefone</th><th>Chip</th><th>Mensagem</th><th>Status</th><th>Origem</th><th><span className="sr-only">Opções</span></th></tr></thead>
+    <tbody>{filtrados.slice(atual*20,atual*20+20).map(i=><tr key={chave(i)}><td><input type="checkbox" aria-label={`Selecionar ${i.origemNome} para ${i.telefone}`} checked={selecao.includes(chave(i))} onChange={e=>setSelecao(e.target.checked?[...selecao,chave(i)]:selecao.filter(k=>k!==chave(i)))}/></td><td>{formatar(i.data)}{i.previsao&&<small>Horário previsto</small>}</td><td>{i.telefone}</td><td>{i.instancia}</td><td className="agendamento-mensagem"><details><summary>{i.mensagem.slice(0,75)}{i.mensagem.length>75?"…":""}</summary><p className="campanha-texto">{i.mensagem}</p></details></td><td><span className="badge">{statusFila[i.status]??i.status}</span></td><td><strong>{i.origem==="campanha"?"Campanha":i.origem==="followup"?"Follow-up":"Individual"}</strong><small>{i.origemNome}</small></td>
+     <td><details className="fila-menu"><summary aria-label={`Opções de ${i.origemNome} para ${i.telefone}`}>⋯</summary><div className="fila-opcoes" role="group" aria-label="Operações do envio">{podeCancelar(i)&&<button disabled={ocupado} onClick={()=>preparar("cancelar",[i])}>Cancelar envio</button>}<button disabled={ocupado||!podeMover(i)} onClick={()=>preparar(lixeira?"restaurar":"lixeira",[i])}>{lixeira?"Restaurar registro":"Mover para a lixeira"}</button>{i.status==="enviando"&&<small>Envio já em andamento.</small>}</div></details></td></tr>)}</tbody></table></div>
+   {!filtrados.length&&<p className="feature-empty">{lixeira?"A lixeira está vazia para estes filtros.":"Nenhuma mensagem encontrada. Campanhas aparecem após iniciar o envio; follow-ups aparecem quando entram na fila."}</p>}
+   <div className="feature-pagination"><span>Página {atual+1} de {Math.max(1,Math.ceil(filtrados.length/20))}</span><button className="secondary" disabled={!atual} onClick={()=>setPagina(atual-1)}>Anterior</button><button className="secondary" disabled={(atual+1)*20>=filtrados.length} onClick={()=>setPagina(atual+1)}>Próxima</button></div>
+   <p className="followup-note">Datas no fuso do navegador. Horários de campanha são previsões e podem mudar com a fila. Só a próxima etapa ativa de cada follow-up está agendada; cancelar esse registro encerra o acompanhamento atual. Restaurar da lixeira recupera a visualização e não reativa envios. Mensagens já enviadas não podem ser recolhidas.</p>
+  </article>}
+  <ModalConfirmacaoBlock aberto={!!confirmacao} titulo={confirmacao?verbos[confirmacao.acao]:"Alterar fila"} mensagem={`${confirmacao?verbos[confirmacao.acao]:"Alterar"}: ${confirmacao?.itens.length??0} registro(s) selecionado(s). ${confirmacao?.acao==="restaurar"?"Nenhum envio será reativado.":"Envios já iniciados não serão interrompidos. Para follow-ups, o acompanhamento atual será encerrado."}`} onConfirmar={()=>void confirmar()} onCancelar={()=>setConfirmacao(null)} carregando={ocupado}/>
+ </div>;
 }

@@ -57,7 +57,7 @@
 
 ## Estrutura PostgreSQL
 
-- A instalação atual é de uma única empresa. O schema Drizzle em `src/lib/db/schema.ts` define usuários, sessões, departamentos, membros, contatos, etiquetas, vínculos de etiquetas, chatbots, fluxos, canais, conversas, mensagens, campanhas, destinatários e auditoria. Com as extensões de identidade, CRM, agendamentos e recibos de webhook, mais as tabelas de configuração e migrações, são 35 tabelas, incluindo horários e reservas de consultas.
+- A instalação atual é de uma única empresa. O schema Drizzle em `src/lib/db/schema.ts` define usuários, sessões, departamentos, membros, contatos, etiquetas, vínculos de etiquetas, chatbots, fluxos, canais, conversas, mensagens, campanhas, destinatários e auditoria. Com as extensões de identidade, CRM, agendamentos e recibos de webhook, mais as tabelas de configuração e migrações, são 37 tabelas, incluindo horários e reservas de consultas.
 - As migrações SQL versionadas são aplicadas pelo servidor na inicialização, quando existe `DATABASE_URL`, ou pelo comando `pnpm db:migrate`. O banco deve existir (PostgreSQL 16) e o usuário deve poder criar tabelas. Não há conexão nem alteração do banco durante o build.
 - O Docker inclui os arquivos de migração. A aplicação usa uma transação e trava PostgreSQL para serializar deploys; checksum impede editar uma migração já aplicada. Novas mudanças exigem novas migrações (`pnpm db:generate`). Não executar `drizzle-kit push` sobre produção.
 - O bootstrap preserva as tabelas e os valores de credenciais das versões anteriores. As migrações não importam os exemplos da interface ou prompts salvos no navegador.
@@ -169,3 +169,6 @@ Antes de pedir nome completo, idade ou endereço, o fluxo pergunta “Vamos agen
 
 ### Dúvidas durante o aceite
 Perguntas de localização, inclusive “Onde ela atende em Salvador?” e “Onde?”, recebem o endereço cadastrado antes de qualquer retomada. Na etapa de interesse, dúvidas não repetem o CTA e não representam aceite. Entradas não reconhecidas nessa etapa seguem para a IA interpretar pelo contexto, preservando a etapa e os dados anteriores.
+
+## Central de mensagens agendadas
+A tela reúne campanhas iniciadas, próxima etapa de follow-up no Redis e envios individuais existentes. Exibe origem e permite cancelar ou mover registros para lixeira, individualmente ou em lote com confirmação. Restaurar não reativa envios; estados já em envio são protegidos. Ver docs/fila-mensagens.md.

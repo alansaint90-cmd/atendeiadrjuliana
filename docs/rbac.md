@@ -93,3 +93,5 @@ alteram a própria conta pela administração. Proprietários exigem processo ma
 Suspensão ou alteração administrativa revoga sessões, desafios e convites antigos.
 
 Campanhas: listar, selecionar destinatários, salvar rascunho, iniciar, cancelar e detalhar exigem papel mínimo admin. Telefones novos não podem ser usados como destinatários de campanha.
+
+A central de mensagens agendadas exige admin para carregarFilaMensagens e alterarFilaMensagens; inclui cancelamento, lixeira e restauração individuais e em lote.
