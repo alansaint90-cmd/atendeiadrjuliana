@@ -10,7 +10,7 @@ export async function contatosElegiveis(banco: TransacaoSql, instancia: string):
  return linhas(await banco.execute(sql`SELECT p.id,p.name nome,p.phone telefone FROM atendeia_contacts p
  WHERE p.is_deleted=false AND p.phone ~ '^[+][1-9][0-9]{6,14}$' AND EXISTS (
  SELECT 1 FROM atendeia_conversations c JOIN atendeia_channels ch ON ch.id=c.channel_id JOIN atendeia_messages m ON m.conversation_id=c.id
- WHERE c.contact_id=p.id AND c.is_deleted=false AND ch.is_deleted=false AND ch.provider='evolution' AND ch.instance_name=${instancia}
+ WHERE c.contact_id=p.id AND c.remote_jid=(substring(p.phone from 2)||'@s.whatsapp.net') AND c.is_deleted=false AND ch.is_deleted=false AND ch.provider='evolution' AND ch.instance_name=${instancia}
  AND m.is_deleted=false AND m.direction='inbound') ORDER BY p.name,p.id`));
 }
 export async function listarCampanhas(banco: TransacaoSql): Promise<Campanha[]> {

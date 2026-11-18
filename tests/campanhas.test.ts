@@ -21,6 +21,10 @@ test("campanhas aceitam somente contatos recebidos no chip e não repetem entreg
   assert.equal(campanhaSchema.safeParse({...dados,telefone:"+5511000000000"}).success,false);
   await assert.rejects(criarCampanha(banco,{...dados,contatos:[randomUUID()]}),/Contatos novos/);
   const outro=(await contatosElegiveis(banco,"outro"))[0];await assert.rejects(criarCampanha(banco,{...dados,contatos:[outro.id]}),/Contatos novos/);
+  await cliente.query("UPDATE atendeia_contacts SET phone='+5511000000000' WHERE id=$1",[contatos[0].id]);
+  assert.equal((await contatosElegiveis(banco,"teste")).length,0,"Telefone alterado precisa ter seu próprio histórico de entrada");
+  await assert.rejects(criarCampanha(banco,dados),/Contatos novos/);
+  await cliente.query("UPDATE atendeia_contacts SET phone=$1 WHERE id=$2",[contatos[0].telefone,contatos[0].id]);
   await criarCampanha(banco,dados);await assert.rejects(criarCampanha(banco,dados),/já cadastrada/);
   assert.equal(await reservarEnvio(banco,"teste"),null,"Rascunho não envia");
   await alterarCampanha(banco,{id:dados.id,version:0},"iniciar");await assert.rejects(alterarCampanha(banco,{id:dados.id,version:0},"iniciar"),/mudou/);
