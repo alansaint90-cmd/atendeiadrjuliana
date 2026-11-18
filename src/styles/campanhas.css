@@ -1,0 +1,10 @@
+.campanha-editor { display: grid; gap: 1.25rem; }
+.campanha-contatos { border: 1px solid var(--border, #dce1eb); border-radius: 14px; padding: 1rem; min-width: 0; }
+.campanha-lista { max-height: 320px; overflow-y: auto; margin-top: 1rem; }
+.campanha-contato { display: flex; align-items: center; gap: .75rem; min-height: 56px; padding: .6rem; border-bottom: 1px solid var(--border, #dce1eb); cursor: pointer; }
+.campanha-contato input { width: 22px; height: 22px; flex-shrink: 0; }
+.campanha-contato small, .campanha-editor small { display: block; }
+.campanha-preview { border: 1px solid var(--border, #dce1eb); border-radius: 14px; padding: 1rem; display: grid; gap: .75rem; }
+.campanha-preview img { max-width: 100%; max-height: 240px; object-fit: contain; justify-self: start; border-radius: 10px; }
+.campanha-preview audio { max-width: 100%; }
+.campanha-texto { white-space: pre-wrap; overflow-wrap: anywhere; }

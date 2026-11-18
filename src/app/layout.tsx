@@ -1,3 +1,4 @@
+import "../styles/campanhas.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "@/styles/base.css";

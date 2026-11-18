@@ -1,3 +1,4 @@
+import { executarCampanhas } from "../campanhas/worker";
 import { db } from "../db/client";
 import { ensureDatabase } from "../db/migrate";
 import { effectiveSettings } from "../settings/repository";
@@ -36,4 +37,5 @@ export async function executarAgendamentos() {
   if (!process.env.DATABASE_URL) return;
   await ensureDatabase();
   await processarAgendamento(db(), effectiveSettings);
+  await executarCampanhas();
 }

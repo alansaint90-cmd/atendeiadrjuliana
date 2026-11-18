@@ -140,3 +140,4 @@ export const auditLogs = pgTable("atendeia_audit_logs", {
   details: jsonb("details").$type<{ motivo?: string; antes?: string[]; depois?: string[] }>().notNull().default({}),
   entityId: uuid("entity_id").notNull(), changedFields: jsonb("changed_fields").$type<string[]>().notNull().default([]), ...audit(),
 }, t => [index("atendeia_audit_entity").on(t.entityType, t.entityId, t.createdAt)]);
+export * from "./schema/campanhas";

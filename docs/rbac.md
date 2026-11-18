@@ -91,3 +91,5 @@ A matriz operacional vigente substitui os exemplos genéricos acima:
 Os nomes novos não alteram os códigos armazenados. Usuários não se promovem nem
 alteram a própria conta pela administração. Proprietários exigem processo manual.
 Suspensão ou alteração administrativa revoga sessões, desafios e convites antigos.
+
+Campanhas: listar, selecionar destinatários, salvar rascunho, iniciar, cancelar e detalhar exigem papel mínimo admin. Telefones novos não podem ser usados como destinatários de campanha.
