@@ -21,11 +21,39 @@ a { color: var(--marca-acao); }
 .marca-simbolo { flex: 0 0 auto; width: 44px; height: 50px; }
 .marca-textos { display: flex; flex-direction: column; gap: 10px; }
 .marca-nome { font-weight: 800; font-size: 28px; letter-spacing: 0; line-height: 1; white-space: nowrap; }
+.marca-palavra { display: inline-flex; align-items: center; gap: .2em; white-space: nowrap; }
+.marca-selo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .24em .42em;
+  border: 1px solid #c090ff;
+  border-radius: .48em;
+  background: linear-gradient(180deg, #8840de, #7925dd 55%, #6812cf);
+  color: #fff;
+  font-size: clamp(.68rem, .68em, 1.75rem);
+  font-weight: 750;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 3px #f0d8ff70, 0 2px 6px #7317d530;
+}
 .marca-ia { color: var(--marca-acao); }
+@supports (background-clip: text) {
+  .marca-ia {
+    background-image: var(--marca-ia-gradiente, linear-gradient(110deg, #5b21b6, #832ddd 55%, #6d28d9));
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+@media (forced-colors: active) {
+  .marca-ia { -webkit-text-fill-color: currentColor; }
+}
+
 .marca-slogan { font-size: 10px; font-weight: 450; line-height: 1.7; letter-spacing: 2.3px; text-transform: uppercase; color: var(--muted); }
 .marca.large .marca-simbolo { width: 68px; height: 76px; }
 .marca.large .marca-nome { font-size: clamp(32px, 3vw, 46px); letter-spacing: 0; }
-.marca-clara { color: #fff; }
+.marca-clara { color: #fff; --marca-ia-gradiente: linear-gradient(110deg, #dfb4ff, #bd86ff 50%, #a875f5); }
 .marca-clara .marca-ia { color: #a78bfa; }
 .marca-clara .marca-slogan { color: #c4c9dc; }
 .sidebar .marca { padding: 0 16px 8px; }

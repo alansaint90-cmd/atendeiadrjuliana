@@ -61,7 +61,7 @@ html body .shell.tema-atende-pro {
     color: var(--sidebar-text); overflow: visible; z-index: 10;
   }
   .sidebar-marca { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 54px; flex-shrink: 0; }
-  .sidebar .marca { padding: 0; gap: 9px; color: #fff; }
+  .sidebar .marca { padding: 0; gap: 9px; color: #fff; --marca-ia-gradiente: linear-gradient(110deg, #dfb4ff, #bd86ff 50%, #a875f5); }
   .sidebar .marca-simbolo { width: 40px; height: 46px; }
   .sidebar .marca-textos { display: flex; min-width: 0; }
   .sidebar .marca-nome { font-size: 20px; gap: 3px; }
