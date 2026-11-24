@@ -17,7 +17,7 @@ test("migrações PostgreSQL preservam credenciais e impõem integridade", async
 
     await t.test("cria todas as tabelas com auditoria e FK RESTRICT", async () => {
       const tables = await client.query<{ table_name: string }>("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name LIKE 'atendeia_%'");
-      assert.equal(tables.rows.length, 37);
+      assert.equal(tables.rows.length, 38);
       for (const nome of ["atendeia_agenda_horarios", "atendeia_agenda_horarios_reservas", "atendeia_campanhas", "atendeia_campanha_destinatarios"]) assert.ok(tables.rows.some(tabela => tabela.table_name === nome));
       for (const { table_name } of tables.rows) {
         const columns = await client.query<{ column_name: string }>("SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name=$1", [table_name]);

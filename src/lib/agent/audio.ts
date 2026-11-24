@@ -28,16 +28,14 @@ async function jsonLimitado(response: Response, limite: number): Promise<unknown
   } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
 }
 
-export async function transcribeAudio(config: AgentConfig, message: IncomingMessage, request = fetch): Promise<string> {
-  if (!message.audio) throw new ProviderError("audio_ausente");
-  let etapa = "evolution_audio";
+export async function carregarAudioEvolution(config:Pick<AgentConfig,'EVOLUTION_API_URL'|'EVOLUTION_API_KEY'|'EVOLUTION_INSTANCE_NAME'>,id:string,request=fetch) {
   try {
     // Busca pelo ID na instância configurada. Nunca acessa URL de mídia do webhook.
     const url = `${config.EVOLUTION_API_URL.replace(/\/$/, "")}/chat/getBase64FromMediaMessage/${encodeURIComponent(config.EVOLUTION_INSTANCE_NAME)}`;
     const media = await request(url, {
       method: "POST", redirect: "error", signal: AbortSignal.timeout(15000),
       headers: { apikey: config.EVOLUTION_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ message: { key: { id: message.audio.id } }, convertToMp4: false }),
+      body: JSON.stringify({ message: { key: { id } }, convertToMp4: false }),
     });
     if (!media.ok) throw new ProviderError(`evolution_audio_http_${media.status}`);
     const parsed = z.object({ base64: z.string().min(1), mimetype: z.string().max(100) })
@@ -53,6 +51,15 @@ export async function transcribeAudio(config: AgentConfig, message: IncomingMess
     const bytes = Buffer.from(base64, "base64");
     if (bytes.toString("base64") !== base64) throw new ProviderError("audio_base64_invalido");
     if (!bytes.length || bytes.length > maxAudio) throw new ProviderError("audio_limite_excedido");
+    return {bytes,mime,extensao};
+  }catch(error){if(error instanceof ProviderError)throw error;throw new ProviderError('evolution_audio_falhou');}
+}
+
+export async function transcribeAudio(config: AgentConfig, message: IncomingMessage, request = fetch): Promise<string> {
+  if (!message.audio) throw new ProviderError("audio_ausente");
+  let etapa = "evolution_audio";
+  try {
+    const {bytes,mime,extensao}=await carregarAudioEvolution(config,message.audio.id,request);
     const body = new FormData();
     body.set("file", new Blob([new Uint8Array(bytes)], { type: mime }), `mensagem.${extensao}`);
     body.set("model", "gpt-4o-mini-transcribe");

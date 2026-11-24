@@ -1,0 +1,53 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { PGlite } from "@electric-sql/pglite";
+import { drizzle } from "drizzle-orm/pglite";
+import { applyMigrations } from "../src/lib/db/migrate";
+import { systemUserId } from "../src/lib/db/bootstrap";
+import { assumirConversa, enviarManual, atendimentoHumanoAtivo } from "../src/lib/atendimento/atendimento";
+import { receberOperacao } from "../src/lib/operacao/receber";
+import { consultarOperacao } from "../src/lib/operacao/consultas";
+
+test("envio humano exige titular autorizado, pausa IA e não repete entregas incertas", async () => {
+  const cliente=new PGlite(), banco=drizzle(cliente), operador=randomUUID(), outro=randomUUID();
+  const ator={userId:operador,papel:"operador" as const,nome:"Atendente de teste"};
+  try {
+    await applyMigrations(banco);
+    for(const id of [operador,outro]) await cliente.query("INSERT INTO atendeia_users(id,name,role,enabled,modified_by) VALUES($1,'Atendente de teste','operador',true,$2)",[id,systemUserId]);
+    const contato=(await cliente.query<{id:string}>("INSERT INTO atendeia_contacts(name,phone,modified_by) VALUES('Aluno de Teste','+5571999990001',$1) RETURNING id",[systemUserId])).rows[0].id;
+    const canal=(await cliente.query<{id:string}>("INSERT INTO atendeia_channels(name,instance_name,modified_by) VALUES('CT Luiz Roca','principal',$1) RETURNING id",[systemUserId])).rows[0].id;
+    const conversa=(await cliente.query<{id:string}>("INSERT INTO atendeia_conversations(channel_id,contact_id,remote_jid,modified_by) VALUES($1,$2,'5571999990001@s.whatsapp.net',$3) RETURNING id",[canal,contato,systemUserId])).rows[0].id;
+    const settings=async()=>({EVOLUTION_API_URL:"https://example.invalid",EVOLUTION_API_KEY:"teste-local",EVOLUTION_INSTANCE_NAME:"principal",AI_ENABLED:"false" as const});
+    let enviados=0;
+    const deps={settings,send:async()=>{enviados++;return "envio-de-teste";}};
+    const pedido={id:conversa,texto:"Sua aula está disponível para conferência.",chave:randomUUID()};
+    await assert.rejects(enviarManual(banco,ator,pedido,deps),/Assuma/);
+    await assumirConversa(banco,ator,{id:conversa,assumir:true});
+    assert.equal(await atendimentoHumanoAtivo(banco,"principal","5571999990001"),true);
+    assert.equal(await atendimentoHumanoAtivo(banco,"outro-chip","5571999990001"),false);
+    await assert.rejects(enviarManual(banco,{...ator,userId:outro},pedido,deps),/Assuma/);
+    await enviarManual(banco,ator,pedido,deps);
+    await assert.rejects(enviarManual(banco,ator,pedido,deps),/já foi enviada/);
+    assert.equal(enviados,1);
+    const incerto={...pedido,chave:randomUUID()};
+    await assert.rejects(enviarManual(banco,ator,incerto,{settings,send:async()=>{enviados++;throw new Error("Falha privada");}}),/Entrega incerta/);
+    await assert.rejects(enviarManual(banco,ator,incerto,deps),/pendente ou incerta/);
+    assert.equal(enviados,2);
+    await assumirConversa(banco,ator,{id:conversa,assumir:false});
+    assert.equal(await atendimentoHumanoAtivo(banco,"principal","5571999990001"),false);
+    await cliente.query("UPDATE atendeia_users SET enabled=false WHERE id=$1",[operador]);
+    await assert.rejects(assumirConversa(banco,ator,{id:conversa,assumir:true}),/permissão/);
+    const historico=await consultarOperacao(banco);
+    assert.equal(historico.conversas[0].mensagens.length,1);
+    assert.equal(historico.conversas[0].mensagens[0].conteudo,pedido.texto);
+    const auditoria=await cliente.query<{entity_type:string}>("SELECT entity_type FROM atendeia_audit_logs WHERE entity_id=$1",[conversa]);
+    assert.ok(auditoria.rows.length>=2);assert.ok(auditoria.rows.every(r=>r.entity_type==="atendimento"));
+    await receberOperacao(banco,{event:"contacts.update",instance:"outro-chip",data:{remoteJid:"5571999990001@s.whatsapp.net",profilePicUrl:"https://example.invalid/foto.jpg"}});
+    assert.equal((await consultarOperacao(banco)).conversas[0].fotoUrl,null);
+    await receberOperacao(banco,{event:"contacts.update",instance:"principal",data:{remoteJid:"5571999990001@s.whatsapp.net",profilePicUrl:"https://example.invalid/foto.jpg"}});
+    assert.equal((await consultarOperacao(banco)).conversas[0].fotoUrl,"https://example.invalid/foto.jpg");
+    await receberOperacao(banco,{event:"contacts.update",instance:"principal",data:{remoteJid:"5571999990001@s.whatsapp.net",profilePicUrl:"javascript:alert(1)"}});
+    assert.equal((await consultarOperacao(banco)).conversas[0].fotoUrl,"https://example.invalid/foto.jpg");
+  } finally {await cliente.close();}
+});

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CaixaEntrada } from "@/components/conversas/caixa-entrada";
 import { PainelShell } from "@/components/painel-shell";
 import { ProximasConsultas } from "@/components/operacao/proximas-consultas";
 import { AgendaPrevia } from "./agenda-previa";
@@ -14,14 +15,15 @@ const agendaDemonstracao = { dia: "2026-10-15", confirmadas: 4, livres: ["2026-1
 
 export function PreviaDesign() {
   const [rota, setRota] = useState("dashboard");
+  const [conversaPrevia, selecionarPrevia] = useState("previa-1");
   const [visual, setVisual] = useState("novo");
   useEffect(() => {
     document.documentElement.dataset.visual = visual;
     return () => { delete document.documentElement.dataset.visual; };
   }, [visual]);
-  const titulo = rota === "consultas" ? "Agenda de consultas" : "Dashboard";
+  const titulo = rota === "inbox" ? "Caixa de entrada" : rota === "consultas" ? "Agenda de consultas" : "Dashboard";
   return <PainelShell papel="admin" nome="Dra. Juliana" email="Prévia local" rota={rota} titulo={titulo}
-    aoNavegar={setRota} rotasVisiveis={["dashboard", "consultas"]}
+    aoNavegar={setRota} rotasVisiveis={["dashboard", "consultas", "inbox"]}
     rodape={<div className="account"><div className="account-identity"><span className="account-avatar">DJ</span><span className="account-details"><strong>Dra. Juliana</strong><small>Clínica Bonvida</small></span></div></div>}>
     <main className="content">
       <div className="previa-aviso"><div><strong>Prévia do design</strong><span>Dados fictícios · nenhuma alteração na agenda real</span></div>
@@ -30,7 +32,7 @@ export function PreviaDesign() {
           <button className={visual === "novo" ? "primary" : "secondary"} aria-pressed={visual === "novo"} onClick={() => setVisual("novo")}>Novo design</button>
         </div>
       </div>
-      {rota === "consultas" ? <AgendaPrevia /> : <div className="page-stack dashboard-page">
+      {rota === "inbox" ? <CaixaEntrada conversas={[{ id: "previa-1", nome: "Paciente de demonstração", telefone: "+55 71 •••••-0000", canal: "Dra. Juliana", status: "open", modoAtendimento: "ia", mensagens: [{id: "m1", conteudo: "Onde a doutora atende em Salvador?", direcao: "inbound", instante: "2026-11-24T12:00:00Z"}, {id: "m2", conteudo: "Na Clínica Bonvida, no Centro Médico do Hospital da Bahia. A consulta pode ser presencial ou por teleconsulta.", direcao: "outbound", instante: "2026-11-24T12:00:05Z"}] }]} selecionada={conversaPrevia} aoSelecionar={selecionarPrevia} atualizar={() => {}} resposta={<p>Prévia visual · envio de mensagens desativado.</p>} /> : rota === "consultas" ? <AgendaPrevia /> : <div className="page-stack dashboard-page">
         <ResumoClinica dados={indicadores} periodo="Últimos 7 dias" podeVerAgenda aoVerAgenda={() => setRota("consultas")}
           agenda={agendaDemonstracao} />
         <ProximasConsultas agenda={agendaDemonstracao} demonstracao aoVerAgenda={() => setRota("consultas")} />

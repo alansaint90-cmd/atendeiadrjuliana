@@ -56,7 +56,7 @@ export const departmentMembers = pgTable("atendeia_department_members", {
 
 export const contacts = pgTable("atendeia_contacts", {
   id: id(), name: text("name").notNull(), phone: text("phone"), email: text("email"),
-  source: text("source"), leadStatus: text("lead_status").notNull().default("novo"),
+  source: text("source"), fotoUrl: text("foto_url"), leadStatus: text("lead_status").notNull().default("novo"),
   score: integer("score").notNull().default(0), notes: text("notes"), ...audit(),
 }, t => [
   uniqueIndex("atendeia_contact_phone_active").on(t.phone).where(sql`${t.isDeleted} = false`),
@@ -141,3 +141,4 @@ export const auditLogs = pgTable("atendeia_audit_logs", {
   entityId: uuid("entity_id").notNull(), changedFields: jsonb("changed_fields").$type<string[]>().notNull().default([]), ...audit(),
 }, t => [index("atendeia_audit_entity").on(t.entityType, t.entityId, t.createdAt)]);
 export * from "./schema/campanhas";
+export * from "./schema/atendimento";

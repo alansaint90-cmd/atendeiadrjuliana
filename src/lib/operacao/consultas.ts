@@ -1,9 +1,11 @@
 import { sql } from "drizzle-orm";
 import { linhas, type BancoSql } from "../db/porta";
+const LIMITE_CONTATOS = 100;
+import type { DadosStatusAtendimento, ModoAtendimento } from "../atendimento/status";
 
 export interface ContatoOperacional { id: string; nome: string; telefone: string | null; email: string | null; origem: string | null; status: string }
-export interface MensagemOperacional { id: string; conteudo: string | null; direcao: string; instante: string }
-export interface ConversaOperacional { id: string; nome: string; telefone: string | null; canal: string; status: string; mensagens: MensagemOperacional[] }
+export interface MensagemOperacional { id: string; conteudo: string | null; direcao: string; instante: string; tipo?:string }
+export interface ConversaOperacional { id: string; nome: string; telefone: string | null; canal: string; status: string; modoAtendimento?:ModoAtendimento; fotoUrl?: string | null; mensagens: MensagemOperacional[] }
 export interface ResumoOperacional {
   abertas: number; pendentes: number; qualificados: number; taxaResposta: number; totalContatos: number;
   contatos: ContatoOperacional[]; conversas: ConversaOperacional[]; volume: { dia: string; total: number }[];
@@ -11,7 +13,7 @@ export interface ResumoOperacional {
 }
 
 /** Leituras coerentes em um snapshot; os filtros preservam a exclusão lógica do schema ativo. */
-export async function consultarOperacao(banco: BancoSql): Promise<ResumoOperacional> {
+export async function consultarOperacao(banco: BancoSql,lerStatus?:(c:DadosStatusAtendimento)=>Promise<ModoAtendimento>): Promise<ResumoOperacional> {
   return banco.transaction(async tx => {
     await tx.execute(sql`SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY`);
     const contagem = linhas<{ abertas: number; pendentes: number; recebidas: number; respondidas: number }>(await tx.execute(sql`
@@ -30,16 +32,17 @@ export async function consultarOperacao(banco: BancoSql): Promise<ResumoOperacio
     const totais = linhas<{ total: number; qualificados: number }>(await tx.execute(sql`SELECT count(*)::int total,
       count(*) FILTER (WHERE lead_status='qualificado')::int qualificados FROM atendeia_contacts WHERE is_deleted=false`))[0];
     const contatos = linhas<ContatoOperacional>(await tx.execute(sql`SELECT id,name nome,phone telefone,email,source origem,lead_status status
-      FROM atendeia_contacts WHERE is_deleted=false ORDER BY created_at DESC,id LIMIT 100`));
-    const conversas = linhas<Omit<ConversaOperacional, "mensagens">>(await tx.execute(sql`SELECT c.id,p.name nome,p.phone telefone,ch.name canal,c.status
+      FROM atendeia_contacts WHERE is_deleted=false ORDER BY created_at DESC,id LIMIT ${LIMITE_CONTATOS}`));
+    const conversas = linhas<Omit<ConversaOperacional, "mensagens"> & DadosStatusAtendimento>(await tx.execute(sql`SELECT c.id,p.name nome,p.phone telefone,ch.name canal,c.status,p.foto_url "fotoUrl",c.human_takeover humano,ch.instance_name instancia,c.remote_jid jid
       FROM atendeia_conversations c JOIN atendeia_contacts p ON p.id=c.contact_id JOIN atendeia_channels ch ON ch.id=c.channel_id
       WHERE c.is_deleted=false AND p.is_deleted=false AND ch.is_deleted=false ORDER BY c.last_message_at DESC NULLS LAST,c.id LIMIT 50`));
     const historicos: ConversaOperacional[] = [];
     for (const conversa of conversas) {
-      const mensagens = linhas<MensagemOperacional>(await tx.execute(sql`SELECT id,content conteudo,direction direcao,
+      const mensagens = linhas<MensagemOperacional>(await tx.execute(sql`SELECT id,content conteudo,direction direcao,message_type tipo,
         to_char(sent_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') instante FROM atendeia_messages
         WHERE conversation_id=${conversa.id} AND is_deleted=false ORDER BY sent_at DESC,created_at DESC,id LIMIT 50`)).reverse();
-      historicos.push({ id: conversa.id, nome: conversa.nome, telefone: conversa.telefone, canal: conversa.canal, status: conversa.status, mensagens });
+      const modoAtendimento=lerStatus ? await lerStatus(conversa) : conversa.status==='closed'?'encerrado':conversa.humano?'humano':'indisponivel';
+      historicos.push({ id: conversa.id, nome: conversa.nome, telefone: conversa.telefone, canal: conversa.canal, status: conversa.status, modoAtendimento,fotoUrl: conversa.fotoUrl, mensagens });
     }
     const volume = linhas<{ dia: string; total: number }>(await tx.execute(sql`SELECT to_char(d.dia,'YYYY-MM-DD') dia,count(m.id)::int total
       FROM generate_series((now() AT TIME ZONE 'UTC')::date-6,(now() AT TIME ZONE 'UTC')::date,interval '1 day') d(dia)

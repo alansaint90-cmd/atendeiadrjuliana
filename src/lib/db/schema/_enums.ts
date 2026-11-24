@@ -12,3 +12,4 @@ export const STATUS_CONSULTA = ["confirmada", "cancelada"] as const;
 /** Monta o CHECK de uma coluna enum a partir da lista (sem repetir os valores). */
 export const listaSql = (valores: readonly string[]) =>
   valores.map((v) => `'${v.replace(/'/g, "''")}'`).join(", ");
+export const STATUS_ENVIO_ATENDIMENTO = ["enviando", "enviado", "incerto"] as const;

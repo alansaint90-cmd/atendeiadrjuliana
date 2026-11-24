@@ -26,11 +26,11 @@ export function PainelShell({ papel, nome, email, foto, rota, titulo, aoNavegar,
   const [recolhido, setRecolhido] = useState(false);
   const menu = nav.filter(([id]) => podeAcessarRotaPainel(papel, id) && (!rotasVisiveis || rotasVisiveis.includes(id)));
 
-  return <div className={`shell ${recolhido ? "sidebar-collapsed" : ""}`}>
-    <aside className="sidebar"><Marca /><nav aria-label="Menu principal">
+  return <div className={`shell tema-atende-pro ${recolhido ? "sidebar-collapsed" : ""}`}>
+    <aside className="sidebar"><div className="sidebar-marca"><Marca /></div><nav aria-label="Menu principal">
       {menu.map(([id, label, ico]) => <button key={id} type="button" className={rota === id ? "active" : ""}
         data-route={id} aria-label={label} aria-current={rota === id ? "page" : undefined}
-        onClick={() => aoNavegar(id)}><span dangerouslySetInnerHTML={{ __html: icon(ico) }} /><span className="nav-label">{label}</span></button>)}
+        onClick={() => aoNavegar(id)}><span className="nav-icone" dangerouslySetInnerHTML={{ __html: icon(ico) }} /><span className="nav-label">{label}</span></button>)}
     </nav>{rodape ?? <ContaMenu nome={nome} email={email} foto={foto} aoAbrirAssinatura={() => aoNavegar("plans")} />}</aside>
     <section className="workspace"><header className="topbar">
       <button className="icon-button" type="button" aria-label="Alternar menu" aria-expanded={!recolhido} onClick={() => setRecolhido(!recolhido)}>☰</button>

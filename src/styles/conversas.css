@@ -1,0 +1,110 @@
+/* Estrutura compartilhada; adapta-se às cores de cada instalação Atende Aí. */
+.workspace:has(> .content-conversas) { display:flex; flex-direction:column; height:100dvh; }
+.workspace:has(> .content-conversas) > .topbar { flex-shrink:0; }
+.workspace .content.content-conversas { flex:1; min-height:0; padding:12px; gap:0; }
+.content-conversas > div { min-height:0; }
+.page-stack.pagina-conversas { display:flex; flex-direction:column; height:100%; min-height:0; gap:12px; }
+.pagina-conversas .conversas-caixa { flex:1; height:auto; min-height:0; }
+.conversas-caixa { display:grid; grid-template-columns:minmax(270px,340px) minmax(0,1fr); height:clamp(440px,calc(100dvh - 235px),850px); min-width:0; overflow:hidden; border:1px solid var(--line); border-radius:16px; background:var(--surface); box-shadow:0 4px 20px #0f172a05; }
+.conversas-caixa * { box-sizing:border-box; }
+.conversas-lateral { display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--line); background:var(--surface); }
+.conversas-barra { min-height:80px; padding:16px 20px; display:flex; align-items:center; gap:12px; background:var(--surface); border-bottom:1px solid var(--line); }
+.conversas-barra > div { min-width:0; }
+.conversas-barra h2 { font-size:16px; font-weight:650; line-height:1.35; margin:0 0 3px; overflow-wrap:anywhere; }
+.conversas-barra span:not(.conversas-avatar) { color:var(--muted); font-size:11px; line-height:1.5; }
+.conversas-atualizar { margin-left:auto; flex-shrink:0; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); padding:8px; min-height:40px; font-size:11px; cursor:pointer; }
+.conversas-busca { padding:14px 16px; border-bottom:1px solid var(--line); }
+.conversas-busca label { display:block; margin-bottom:7px; font-size:12px; font-weight:550; }
+.conversas-busca input { width:100%; min-height:42px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--bg); color:var(--text); font-size:13px; }
+.conversas-lista { list-style:none; padding:0; margin:0; overflow-y:auto; min-height:0; }
+.conversas-contato { display:flex; align-items:center; gap:12px; width:100%; padding:17px 16px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:var(--surface); color:var(--text); text-align:left; cursor:pointer; }
+.conversas-caixa .conversas-contato { border-radius:0; }
+.conversas-contato:hover { background:color-mix(in srgb,var(--marca-acao) 4%,var(--surface)); }
+.conversas-contato[aria-pressed=true] { background:color-mix(in srgb,var(--marca-acao) 8%,var(--surface)); box-shadow:inset 3px 0 var(--marca-acao); }
+.conversas-avatar { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; flex:0 0 44px; overflow:hidden; border-radius:50%; background:#ece8f7; color:#58428d; font-size:14px; font-weight:650; }
+.conversas-avatar img { width:100%; height:100%; object-fit:cover; }
+.conversas-resumo { display:flex; flex-direction:column; gap:5px; min-width:0; flex:1; }
+.conversas-identificacao { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.conversas-identificacao strong { font-size:13px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.conversas-identificacao time { font-size:10px; flex-shrink:0; color:var(--muted); }
+.conversas-previa { color:var(--muted); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:12px; line-height:1.5; }
+.conversas-canal { font-size:10px; color:var(--muted); }
+.conversas-principal { min-width:0; min-height:0; display:flex; flex-direction:column; }
+.conversas-cabecalho { flex-shrink:0; }
+.conversas-dados-contato { flex:1; overflow-wrap:anywhere; }
+.conversas-titulo-contato { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; margin-bottom:3px; }
+.conversas-titulo-contato h2 { margin:0; }
+.conversas-barra .conversas-modo[data-modo] { display:inline-flex; align-items:center; flex-shrink:0; border:1px solid var(--line); border-radius:999px; padding:4px 9px; color:var(--text); background:var(--bg); font-size:12px; font-weight:600; line-height:1.5; white-space:nowrap; }
+.conversas-barra .conversas-modo[data-modo=ia] { color:var(--marca-acao); background:color-mix(in srgb,var(--marca-acao) 8%,var(--surface)); }
+.conversas-barra .conversas-modo[data-modo=humano] { border-color:var(--text); }
+.conversas-balao:has(.conversas-audio) { width:min(340px,92%); }
+.conversas-audio audio { display:block; width:100%; max-width:300px; min-width:0; }
+.conversas-audio button { min-height:44px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); padding:8px 12px; }
+.conversas-voltar { display:none; }
+.conversas-historico { flex:1; min-height:0; overflow:auto; padding:20px 28px; background-color:#f5f2eb; background-image:radial-gradient(#d5cfc344 .8px,transparent .8px); background-size:15px 15px; scroll-padding:16px; }
+.conversas-aviso { margin:0 auto 20px; width:fit-content; border:1px solid #e4dfd5; background:#fffaf0; border-radius:8px; color:#645c4c; padding:6px 12px; text-align:center; font-size:11px; }
+.conversas-linha { display:flex; flex-direction:column; align-items:flex-start; gap:10px; margin-bottom:9px; }
+.conversas-dia { align-self:center; margin:8px 0; background:#ffffffcf; border:1px solid #e4dfd5; border-radius:7px; padding:5px 10px; font-size:10px; color:#645c4c; }
+.conversas-balao { max-width:85%; min-width:90px; padding:10px 12px 7px; border-radius:2px 12px 12px; background:#fff; box-shadow:0 1px 2px #0000000d; color:#202c33; }
+.conversas-balao.enviada { align-self:flex-end; background:#ddf4d4; border-radius:12px 2px 12px 12px; }
+.conversas-balao p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; line-height:1.65; }
+.conversas-balao time { display:block; color:#59676a; text-align:right; font-size:10px; margin-top:4px; }
+.conversas-resposta { flex-shrink:0; padding:10px 18px 16px; border-top:1px solid var(--line); background:var(--surface); max-height:45%; overflow:auto; }
+.conversas-resposta .farmacia-toolbar { margin:0 0 10px; gap:8px; align-items:center; }
+.conversas-resposta .farmacia-toolbar button { min-height:32px; font-size:11px; padding:5px 9px; background:var(--surface); color:var(--text); }
+.conversas-resposta .farmacia-toolbar a { margin-left:auto; font-size:12px; }
+.conversas-resposta form { display:flex; gap:10px; align-items:flex-end; }
+.conversas-resposta label { flex:1; min-width:0; font-size:11px; }
+.conversas-resposta textarea { min-height:44px; max-height:120px; resize:vertical; border-radius:12px; font-size:13px; }
+.conversas-resposta form button { min-height:44px; font-size:12px; flex-shrink:0; }
+.conversas-resposta [role=status] { font-size:12px; margin:6px 0; }
+.anexo-manual { margin-bottom:10px; }
+.anexo-manual-botoes { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.anexo-manual-botoes button { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-width:44px; min-height:44px; border:1px solid var(--line); background:var(--surface); color:var(--text); border-radius:10px; cursor:pointer; }
+.anexo-manual-botoes button[aria-pressed=true] { color:#b42318; background:#fff1f0; }
+.anexo-manual-botoes small { color:var(--muted); font-size:11px; }
+.anexo-manual-previa { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:10px; }
+.anexo-manual-previa img { width:100px; height:80px; object-fit:contain; border:1px solid var(--line); border-radius:8px; }
+.anexo-manual-previa audio { max-width:100%; }
+.conversas-caixa .conversas-resposta { padding:6px 12px 10px; border-top:0; background:#f5f2eb; overflow:visible; max-height:none; position:relative; z-index:2; }
+.atendimento-manual .anexo-manual { margin:0; width:100%; }
+.atendimento-manual form { display:block; margin:0; }
+.compositor-acoes { display:flex; align-items:center; gap:6px; min-height:24px; margin-bottom:2px; }
+.compositor-aviso { color:var(--muted); font-size:11px; line-height:1.4; }
+.compositor-menu { position:relative; flex-shrink:0; }
+.atendimento-manual .compositor-acoes > .compositor-menu > button { display:flex; align-items:center; justify-content:center; width:28px; min-height:24px; padding:0; border:0; background:transparent; color:var(--muted); cursor:pointer; }
+.compositor-barra { display:flex; align-items:center; gap:2px; width:100%; min-height:52px; border:1px solid #e6e3df; border-radius:28px; padding:4px 6px; background:var(--surface); box-shadow:0 1px 4px #00000005; }
+.atendimento-manual .compositor-barra button { display:inline-flex; align-items:center; justify-content:center; min-width:40px; width:40px; min-height:40px; padding:0; margin:0; border:0; background:transparent; color:var(--text); cursor:pointer; }
+.atendimento-manual .compositor-barra textarea { flex:1; min-width:0; width:0; height:40px; min-height:40px; max-height:96px; padding:9px 6px; border:0; border-radius:0; background:transparent; font-size:14px; line-height:22px; resize:none; }
+.atendimento-manual .compositor-barra .compositor-enviar { background:var(--marca-acao); color:#fff; border-radius:50%; }
+.compositor-popup { position:absolute; bottom:calc(100% + 8px); left:0; min-width:190px; max-width:calc(100vw - 48px); padding:6px; border:1px solid var(--line); border-radius:14px; background:var(--surface); box-shadow:0 5px 22px #0f172a24; z-index:5; }
+.atendimento-manual .compositor-popup button,.atendimento-manual .compositor-popup a { display:flex; align-items:center; justify-content:flex-start; width:100%; min-height:40px; padding:8px 12px; margin:0; border:0; border-radius:8px; text-align:left; background:transparent; color:var(--text); font-size:13px; text-decoration:none; cursor:pointer; }
+.atendimento-manual .compositor-popup button:hover,.atendimento-manual .compositor-popup a:hover { background:var(--bg); }
+.compositor-popup small { display:block; padding:6px 12px; color:var(--muted); font-size:11px; }
+.compositor-emojis { display:grid; grid-template-columns:repeat(4,40px); }
+.atendimento-manual .compositor-emojis button { justify-content:center; padding:4px; font-size:21px; }
+.anexo-manual-previa { margin:0 0 8px; max-height:110px; overflow:auto; }
+.anexo-manual-previa video { max-width:180px; max-height:100px; }
+@media(max-width:640px) { .atendimento-manual .compositor-barra textarea { font-size:16px; } .compositor-barra { gap:0; padding:4px; } }
+.conversas-vazio { margin:18px; color:var(--muted); font-size:13px; line-height:1.7; }
+.conversas-sem-selecao { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; padding:30px; text-align:center; background:var(--bg); color:var(--muted); }
+.conversas-sem-selecao h2 { font-size:19px; color:var(--text); }
+.conversas-caixa :is(button,input,textarea,[tabindex]):focus-visible { outline:3px solid var(--marca-violeta); outline-offset:-3px; }
+@media(max-width:768px) {
+  .shell:has(> .workspace > .content-conversas) { display:flex; flex-direction:column; height:100dvh; min-height:0; }
+  .shell:has(> .workspace > .content-conversas) > .sidebar { flex-shrink:0; }
+  .shell:has(> .workspace > .content-conversas) > .workspace { flex:1; min-height:0; height:auto; }
+}
+@media(max-width:850px) {
+  .conversas-caixa { display:flex; height:calc(100dvh - 180px); min-height:440px; }
+  .conversas-lateral,.conversas-principal { width:100%; }
+  .conversas-caixa:not(.conversa-aberta) .conversas-principal,.conversas-caixa.conversa-aberta .conversas-lateral { display:none; }
+  .conversas-voltar { display:block; background:transparent; color:var(--text); border:0; min-width:36px; min-height:44px; font-size:23px; cursor:pointer; }
+  .conversas-barra { padding:12px; gap:9px; }
+  .conversas-historico { padding:14px; }
+  .conversas-balao { max-width:92%; }
+  .conversas-resposta { padding:10px; max-height:50%; }
+  .conversas-resposta form { flex-wrap:wrap; }
+  .conversas-resposta form button { margin-left:auto; }
+  .conversas-busca input,.conversas-resposta textarea { font-size:16px; }
+}
